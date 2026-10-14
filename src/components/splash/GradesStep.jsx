@@ -1,0 +1,50 @@
+import { useState } from "react";
+import GradesComponent from "./GradesComponent";
+import InterestComponent from "./InterestComponent";
+
+function GradesStep({
+  view, // "grades" | "interest" (jika dikontrol oleh parent)
+  onViewChange,
+  // Props untuk Grades
+  subStep = 1,
+  onSubStepChange,
+  selectedSubjects = [],
+  setSelectedSubjects,
+  errorMessage = "",
+  // Props untuk Interest
+  interestSubStep = 1,
+  onInterestSubStepChange,
+  selectedInterests = [],
+  setSelectedInterests,
+  interestErrorMessage = "",
+}) {
+  // Local fallback jika view tidak dikontrol parent
+  const [localView, setLocalView] = useState("grades");
+  const activeView = view !== undefined ? view : localView;
+  const changeView = onViewChange || setLocalView;
+
+  return (
+    <div className="w-full h-full flex flex-col justify-between">
+      {activeView === "grades" ? (
+        <GradesComponent
+          subStep={subStep}
+          onSubStepChange={onSubStepChange}
+          selectedSubjects={selectedSubjects}
+          setSelectedSubjects={setSelectedSubjects}
+          errorMessage={errorMessage}
+        />
+      ) : (
+        <InterestComponent
+          subStep={interestSubStep}
+          onSubStepChange={onInterestSubStepChange}
+          selectedInterests={selectedInterests}
+          setSelectedInterests={setSelectedInterests}
+          errorMessage={interestErrorMessage}
+        />
+      )}
+    </div>
+  );
+}
+
+export { GradesComponent, InterestComponent };
+export default GradesStep;
