@@ -23,15 +23,15 @@ function BottomNavigation({
   const containerStyle =
     variant === "floating"
       ? "fixed bottom-7 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-87 z-50 md:hidden"
-      : "shrink-0 px-6 pb-6 pt-2";
+      : "shrink-0 px-6 pb-6 pt-2 max-w-md mx-auto w-full";
 
   return (
     <div className={`${containerStyle} ${className}`}>
       <nav
-        className="w-full h-16 bg-[#d9d9d9] rounded-[22px] flex items-center justify-around shadow-nav px-2"
+        className="w-full h-16 bg-[#d9d9d9] rounded-[22px] flex items-center justify-center gap-12 sm:gap-8 shadow-nav px-4"
         aria-label="Bottom Navigation"
       >
-        {/* 1. Home (Ikon Rumah solid di tengah) */}
+        {/* 1. Node (Ikon Node/bulat solid di tengah) */}
         <button
           type="button"
           onClick={() => onTabChange("home")}
@@ -42,10 +42,10 @@ function BottomNavigation({
           }`}
           aria-label="Home"
         >
-          <HomeNavIcon className="w-7 h-7" cutoutColor="#d9d9d9" />
+          <RecommendationNavIcon className="w-12 h-12" cutoutColor="#d9d9d9" />
         </button>
 
-        {/* 2. Recomendation (Ikon Bola dengan lengkung pantulan) */}
+        {/* 2. Recomendation (Ikon Kertas) */}
         <button
           type="button"
           onClick={() => onTabChange("recomendation")}
@@ -56,7 +56,7 @@ function BottomNavigation({
           }`}
           aria-label="Recomendation"
         >
-          <RecommendationNavIcon className="w-7 h-7" cutoutColor="#d9d9d9" />
+          <HomeNavIcon className="w-12 h-12" cutoutColor="#d9d9d9" />
         </button>
 
         {/* 3. Profile (Ikon Profil di kanan) */}
@@ -70,7 +70,7 @@ function BottomNavigation({
           }`}
           aria-label="Profile"
         >
-          <ProfileNavIcon className="w-7 h-7" />
+          <ProfileNavIcon className="w-12 h-12" />
         </button>
       </nav>
     </div>
