@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { formatInterestsForBackend } from "../../utils/interestUtils";
 import { mapSubjectsToBackendPayload } from "../../utils/subjectMapping";
 import { fetchRecommendedMajors, mapMajorNodesToUi } from "../../api/majorApi";
+import recommendationRepository from "../../repositories/recommendationRepository";
 
 const DEMO_MAJOR_NODES = [
   { id: "demo-1", major_name: "SOSIOLOGI", circle_color: "#0970DD", child_id: null },
@@ -49,6 +50,9 @@ function GeneratingStep({
         Array.isArray(result.mappedNodes) &&
         result.mappedNodes.length > 0
       ) {
+        // Simpan profil siswa (minat & nilai) untuk keperluan endpoint recommendation-results
+        recommendationRepository.saveUserProfile({ minat, nilai });
+
         setTimeout(() => {
           if (onComplete) onComplete(result.mappedNodes);
         }, remainingTime);

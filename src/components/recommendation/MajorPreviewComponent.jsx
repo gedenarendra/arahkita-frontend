@@ -96,13 +96,34 @@ function MajorPreviewComponent({
   onBack = () => {},
   onSelectCareer = () => {},
 }) {
-  const major = majorData?.major || propMajor;
-  const titleIndo = majorData?.titleIndo || propTitleIndo;
+  const major = majorData?.major_name || majorData?.major || propMajor;
+  const titleIndo = majorData?.titleIndo || propTitleIndo || major;
   const matchPercentage =
-    majorData?.score || majorData?.matchPercentage || propMatchPercentage;
-  const statusLabel = majorData?.statusLabel || "Logis";
+    majorData?.matching_percentage !== undefined
+      ? `${majorData.matching_percentage}%`
+      : majorData?.score || majorData?.matchPercentage || propMatchPercentage;
+  const statusLabel = majorData?.statusLabel || "Selesai";
   const tagLabel = majorData?.tags?.[0] || major;
-  const careersList = majorData?.careers || DEFAULT_CAREERS;
+
+  // Ekstrak daftar karir dari preview backend (preview.career_paths)
+  const rawCareers =
+    majorData?.preview?.career_paths ||
+    majorData?.career_paths ||
+    majorData?.careers;
+
+  const careersList =
+    Array.isArray(rawCareers) && rawCareers.length > 0
+      ? rawCareers.map((c) => ({
+          id: c.id,
+          title: c.title,
+          description: c.detail || c.description || "",
+          workEnvironments: c.workEnvironments || [
+            { label: "Sektor Industri", description: `Bidang profesi terkait ${major}.` },
+          ],
+        }))
+      : DEFAULT_CAREERS;
+
+  const narrative = majorData?.preview?.preview || null;
   const illustration = majorData?.illustration || mathIllustration;
 
   return (
@@ -196,21 +217,22 @@ function MajorPreviewComponent({
           </p>
 
           <div className="space-y-3 text-[11px] sm:text-xs text-gray-700 leading-relaxed font-normal">
-            <p>
-              Mengapa Jurusan Ini Cocok Untukmu? Berdasarkan jawaban dan pilihan
-              yang kamu berikan, kamu menunjukkan pola pikir yang sangat analitis,
-              terstruktur, dan logis. Kamu memiliki ketertarikan alami dalam
-              memecahkan masalah kompleks serta mencari pola di balik suatu
-              informasi. Pendekatan berpikirmu yang objektif ini adalah fondasi
-              utama yang sangat dibutuhkan dalam program studi Matematika.
-            </p>
-            <p>
-              Di jurusan ini, kamu tidak hanya akan sekadar belajar berhitung,
-              tetapi juga mengasah kemampuan problem-solving tingkat lanjut.
-              Keahlian ini akan membuatmu sangat dicari di berbagai industri
-              modern, mulai dari pengembangan teknologi, sains data (Data Science),
-              hingga sektor keuangan dan aktuaria.
-            </p>
+            {narrative ? (
+              <p className="whitespace-pre-line">{narrative}</p>
+            ) : (
+              <>
+                <p>
+                  Mengapa Jurusan Ini Cocok Untukmu? Berdasarkan jawaban dan pilihan
+                  yang kamu berikan, kamu menunjukkan pola pikir yang sangat analitis,
+                  terstruktur, dan logis. Pendekatan berpikirmu yang objektif ini adalah fondasi
+                  utama yang sangat dibutuhkan dalam program studi {major}.
+                </p>
+                <p>
+                  Di jurusan ini, kamu akan mengasah kemampuan problem-solving tingkat lanjut
+                  yang membuatmu siap berkarir di berbagai industri modern dan berkembang.
+                </p>
+              </>
+            )}
           </div>
         </div>
 

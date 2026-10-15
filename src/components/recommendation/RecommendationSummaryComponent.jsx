@@ -1,7 +1,7 @@
 import logoArahkita from "../../assets/Logo.png";
 import mathIllustration from "../../assets/math_illustration.png";
 
-// Helper untuk mengekstrak angka numerik persentase dari berbagai format (string "98%", number 98, dll)
+// Helper untuk mengekstrak angka numerik persentase
 const parseScoreToNumber = (val) => {
   if (val === undefined || val === null) return 0;
   if (typeof val === "number") return val;
@@ -9,31 +9,19 @@ const parseScoreToNumber = (val) => {
   return isNaN(num) ? 0 : num;
 };
 
-// Mencari jurusan dengan persentase terbesar dari data rekomendasi
-const getHighestScoreMajor = (list) => {
-  if (!Array.isArray(list) || list.length === 0) return null;
-  return list.reduce((highest, current) => {
-    const currentScore = parseScoreToNumber(
-      current?.score ?? current?.matchPercentage ?? current?.percentage,
-    );
-    const highestScore = parseScoreToNumber(
-      highest?.score ?? highest?.matchPercentage ?? highest?.percentage,
-    );
-    return currentScore > highestScore ? current : highest;
-  }, list[0]);
-};
-
-// Data Rekomendasi Default jika props belum disediakan dari Parent/BE
+// Data Rekomendasi Default jika props belum disediakan
 const DEFAULT_RECOMMENDATION_ITEMS = [
   {
     id: "math",
     major: "Math",
     titleIndo: "Matematika (Mathematics)",
-    score: "98%", // Persentase kecocokan terbesar (tampil di lingkaran besar)
-    cardScore: "98%", // Nilai pada pill kartu sesuai mockup Gambar 1
-    testProgress: 100, // 100% = Selesai semua -> Hijau penuh
-    statusLabel: "logis",
-    statusVariant: "success", // green
+    score: "98%",
+    cardScore: "98%",
+    matching_percentage: 98,
+    is_completed: true,
+    testProgress: 100,
+    statusLabel: "Selesai",
+    statusVariant: "success",
     tags: ["Matematika", "Pendidikan"],
     illustration: mathIllustration,
   },
@@ -43,9 +31,11 @@ const DEFAULT_RECOMMENDATION_ITEMS = [
     titleIndo: "Teknologi Informasi (Information Technology)",
     score: "87%",
     cardScore: "87%",
-    testProgress: 55, // 55% = Belum selesai -> Orange tidak penuh
-    statusLabel: "gak cocok",
-    statusVariant: "danger", // red
+    matching_percentage: 87,
+    is_completed: true,
+    testProgress: 55,
+    statusLabel: "Selesai",
+    statusVariant: "success",
     tags: ["Teknologi", "Informatika"],
     illustration: mathIllustration,
   },
@@ -53,25 +43,24 @@ const DEFAULT_RECOMMENDATION_ITEMS = [
 
 /**
  * Komponen Donut Progress Penyelesaian Jurusan:
- * - 100% (Selesai semua): Warna hijau & bundaran penuh
- * - >0% dan <100% (Belum selesai): Warna orange & bundaran gak penuh
- * - 0% (Masih kosong): Abu-abu & tidak ada arc progress
+ * - 100% (Selesai): Warna hijau & bundaran penuh
+ * - >0% dan <100% (Sebagian): Warna orange & bundaran sebagian
+ * - 0% (Belum selesai): Abu-abu penuh
  */
 function ProgressDonut({ progress = 0 }) {
   const normalized = Math.min(100, Math.max(0, Number(progress) || 0));
   const isComplete = normalized >= 100;
   const isStarted = normalized > 0;
 
-  // Radius 14 pada viewBox 36x36 -> keliling = 2 * PI * 14 ≈ 87.96
   const radius = 14;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (normalized / 100) * circumference;
 
-  let strokeColor = "#9ca3af"; // Default abu-abu
+  let strokeColor = "#9ca3af";
   if (isComplete) {
-    strokeColor = "#48bb78"; // Hijau jika selesai semua
+    strokeColor = "#48bb78";
   } else if (isStarted) {
-    strokeColor = "#f59e0b"; // Orange jika belum selesai
+    strokeColor = "#f59e0b";
   }
 
   return (
@@ -80,7 +69,6 @@ function ProgressDonut({ progress = 0 }) {
       title={`Progress: ${normalized}%`}
     >
       <svg className="w-9 h-9 transform -rotate-90" viewBox="0 0 36 36">
-        {/* Lingkaran dasar abu-abu (selalu ada) */}
         <circle
           cx="18"
           cy="18"
@@ -89,11 +77,6 @@ function ProgressDonut({ progress = 0 }) {
           stroke="#b5b5b5"
           strokeWidth="3.8"
         />
-
-        {/* Arc Progress Berwarna:
-            - Hijau penuh jika 100%
-            - Orange parsial jika >0% dan <100%
-            - Tidak dirender jika 0% (sehingga tetap abu-abu) */}
         {isStarted && (
           <circle
             cx="18"
@@ -113,45 +96,99 @@ function ProgressDonut({ progress = 0 }) {
 }
 
 /**
- * Komponen 1: Halaman Ringkasan Hasil Rekomendasi (Sesuai Gambar 1)
- *
- * Props:
- * - recommendations: Array data rekomendasi jurusan dari parent (props)
- * - topRecommendation: Override rekomendasi utama jika ingin ditentukan manual
- * - onSelectMajor: Callback ketika user memilih salah satu kartu jurusan
+ * Normalisasi satu objek hasil rekomendasi (dari backend MajorRecommendationResult atau props lokal)
+ */
+function normalizeItem(raw) {
+  const majorName = raw.major_name || raw.major || "Jurusan";
+  const percentage =
+    raw.matching_percentage !== undefined
+      ? Number(raw.matching_percentage) || 0
+      : parseScoreToNumber(raw.score ?? raw.cardScore ?? 0);
+
+  const isCompleted = Boolean(raw.is_completed);
+
+  // Status label & variant
+  let statusLabel = raw.statusLabel;
+  let statusVariant = raw.statusVariant;
+
+  if (!statusLabel) {
+    if (!isCompleted) {
+      statusLabel = "Belum Dikerjakan";
+      statusVariant = "neutral";
+    } else {
+      statusLabel = "Selesai";
+      statusVariant = "success";
+    }
+  }
+
+  // Tags: extract dari subject_relevances jika ada
+  let tags = [];
+  if (Array.isArray(raw.subject_relevances) && raw.subject_relevances.length > 0) {
+    tags = raw.subject_relevances
+      .map((sr) => sr?.subject_name || sr?.name || String(sr))
+      .filter(Boolean);
+  } else if (Array.isArray(raw.tags)) {
+    tags = raw.tags;
+  }
+
+  return {
+    ...raw,
+    id: raw.id || majorName,
+    major: majorName,
+    major_name: majorName,
+    matching_percentage: percentage,
+    score: `${percentage}%`,
+    cardScore: `${percentage}%`,
+    testProgress: isCompleted ? 100 : 0,
+    is_completed: isCompleted,
+    statusLabel,
+    statusVariant,
+    tags,
+    preview: raw.preview || null,
+    illustration: raw.illustration || mathIllustration,
+  };
+}
+
+/**
+ * Komponen 1: Halaman Ringkasan Hasil Rekomendasi
  */
 function RecommendationSummaryComponent({
   recommendations = DEFAULT_RECOMMENDATION_ITEMS,
   topRecommendation,
   onSelectMajor = () => {},
 }) {
-  const items =
+  const rawList =
     Array.isArray(recommendations) && recommendations.length > 0
       ? recommendations
       : DEFAULT_RECOMMENDATION_ITEMS;
 
-  // Persentase lingkaran yang besar merupakan persentase terbesar dari jurusan yang ada
-  const highestMajor = getHighestScoreMajor(items);
-  const top = topRecommendation ||
-    highestMajor ||
-    items[0] || { score: "98%", major: "Math" };
+  const items = rawList.map(normalizeItem);
 
-  const topNumeric = parseScoreToNumber(
-    top?.score ?? top?.matchPercentage ?? top?.percentage ?? 98,
-  );
+  // Cari jurusan dengan persentase tertinggi yang SUDAH selesai
+  const completedItems = items.filter((item) => item.is_completed);
+  const highestCompleted =
+    completedItems.length > 0
+      ? completedItems.reduce((highest, curr) =>
+          curr.matching_percentage > highest.matching_percentage ? curr : highest,
+        completedItems[0])
+      : null;
 
-  // SVG Gauge besar lingkaran keliling
+  // Jika ada rekomendasi yang sudah selesai, tampilkan persentase tertinggi.
+  // Jika belum ada yang selesai sama sekali, tampilkan 0% sesuai kesepakatan.
+  const hasCompleted = Boolean(highestCompleted);
+  const top = topRecommendation
+    ? normalizeItem(topRecommendation)
+    : highestCompleted;
+
+  const topNumeric = hasCompleted && top ? top.matching_percentage : 0;
+  const topFormattedScore = `${topNumeric}%`;
+  const topLabel = hasCompleted && top ? top.major : "Belum Ada Hasil";
+
+  // SVG Gauge besar lingkaran keliling (Radius 48, keliling ≈ 301.59)
   const topRadius = 48;
-  const topCircumference = 2 * Math.PI * topRadius; // ≈ 301.59
+  const topCircumference = 2 * Math.PI * topRadius;
   const topDashoffset =
-    topCircumference -
-    (Math.min(100, Math.max(0, topNumeric)) / 100) * topCircumference;
-
-  const topFormattedScore = top.score
-    ? String(top.score).includes("%")
-      ? top.score
-      : `${top.score}%`
-    : `${Math.round(topNumeric)}%`;
+    topCircumference - (Math.min(100, Math.max(0, topNumeric)) / 100) * topCircumference;
 
   return (
     <div className="w-full h-full flex flex-col bg-white font-sans overflow-hidden select-none">
@@ -171,10 +208,9 @@ function RecommendationSummaryComponent({
 
       {/* ── 2. Konten Scrollable ── */}
       <div className="flex-1 min-h-0 px-6 pt-2 pb-3 overflow-y-auto max-w-md mx-auto w-full flex flex-col items-center">
-        {/* Lingkaran Gauge Besar: Persentase Terbesar dari Jurusan yang Ada */}
+        {/* Lingkaran Gauge Besar: Persentase Terbesar (atau 0% jika belum ada yang selesai) */}
         <div className="my-5 relative flex items-center justify-center">
           <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 120 120">
-            {/* Lingkaran dasar abu-abu tipis */}
             <circle
               cx="60"
               cy="60"
@@ -183,55 +219,58 @@ function RecommendationSummaryComponent({
               stroke="#f1f5f9"
               strokeWidth="9"
             />
-            {/* Lingkaran Luar Biru Berdasarkan Persentase Terbesar */}
-            <circle
-              cx="60"
-              cy="60"
-              r={topRadius}
-              fill="none"
-              stroke="#3B82F6"
-              strokeWidth="9"
-              strokeDasharray={topCircumference}
-              strokeDashoffset={topDashoffset}
-              strokeLinecap="round"
-            />
+            {topNumeric > 0 && (
+              <circle
+                cx="60"
+                cy="60"
+                r={topRadius}
+                fill="none"
+                stroke="#3B82F6"
+                strokeWidth="9"
+                strokeDasharray={topCircumference}
+                strokeDashoffset={topDashoffset}
+                strokeLinecap="round"
+              />
+            )}
           </svg>
 
           {/* Teks di Tengah Lingkaran */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
+          <div className="absolute inset-0 flex flex-col items-center justify-center select-none text-center px-4">
             <span className="text-4xl font-extrabold text-gray-950 tracking-tight leading-none">
               {topFormattedScore}
             </span>
-            <span className="text-sm font-semibold text-gray-800 mt-1">
-              {top.major || "Math"}
+            <span className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 truncate max-w-32">
+              {topLabel}
             </span>
           </div>
         </div>
 
-        {/* ── 3. Daftar Card Jurusan Berdasarkan Props ── */}
+        {/* ── 3. Daftar Card Jurusan ── */}
         <div className="w-full space-y-4 pb-2">
           {items.map((item, index) => {
-            const currentProgress =
-              item.testProgress !== undefined
-                ? item.testProgress
-                : item.progress !== undefined
-                  ? item.progress
-                  : 0;
-
-            const cardIllustration = item.illustration || mathIllustration;
-            const displayedScore =
-              item.cardScore || item.score || `${Math.round(currentProgress)}%`;
+            const isClickable = item.is_completed;
+            const currentProgress = item.testProgress;
+            const displayedScore = item.cardScore;
 
             return (
               <div
-                key={item.id || item.major || index}
-                onClick={() => onSelectMajor(item)}
-                className="w-full bg-[#d9d9d9] rounded-3xl p-3 shadow-md flex items-center overflow-hidden hover:shadow-lg active:scale-98 transition-all cursor-pointer"
+                key={item.id || index}
+                onClick={isClickable ? () => onSelectMajor(item) : undefined}
+                className={`w-full bg-[#d9d9d9] rounded-3xl p-3 shadow-md flex items-center overflow-hidden transition-all ${
+                  isClickable
+                    ? "hover:shadow-lg active:scale-98 cursor-pointer"
+                    : "opacity-75 cursor-not-allowed"
+                }`}
+                title={
+                  isClickable
+                    ? `Lihat detail hasil ${item.major}`
+                    : "Jurusan belum dikerjakan. Selesaikan tantangan di Beranda terlebih dahulu."
+                }
               >
-                {/* Gambar Ilustrasi Guru & Papan Tulis di Kiri */}
+                {/* Gambar Ilustrasi di Kiri */}
                 <div className="w-34 sm:w-36 shrink-0 h-28 flex items-center justify-center overflow-hidden">
                   <img
-                    src={cardIllustration}
+                    src={item.illustration}
                     alt={item.major}
                     className="h-full w-full object-contain object-left drop-shadow-xs"
                   />
@@ -239,7 +278,7 @@ function RecommendationSummaryComponent({
 
                 {/* Konten Kanan */}
                 <div className="flex-1 min-w-0 pl-2">
-                  <h2 className="text-[19px] font-extrabold text-gray-950 tracking-tight leading-tight">
+                  <h2 className="text-[19px] font-extrabold text-gray-950 tracking-tight leading-tight truncate">
                     {item.major}
                   </h2>
 
@@ -254,37 +293,34 @@ function RecommendationSummaryComponent({
                     </div>
                   </div>
 
-                  {/* Badge Status (Logis / Gak Cocok / dll) */}
+                  {/* Badge Status (Selesai / Belum Dikerjakan) */}
                   <div className="mb-2">
                     <div
                       className={`w-full py-0.5 rounded-full text-center text-xs font-bold text-white shadow-xs ${
-                        item.statusVariant === "danger"
-                          ? "bg-[#ff0000]"
-                          : item.statusVariant === "neutral"
-                            ? "bg-[#6b7280]"
-                            : "bg-[#48bb78]"
+                        item.statusVariant === "neutral"
+                          ? "bg-[#64748B]"
+                          : item.statusVariant === "danger"
+                            ? "bg-[#EF4444]"
+                            : "bg-[#10B981]"
                       }`}
                     >
-                      {item.statusLabel ||
-                        (currentProgress >= 100 ? "selesai" : "proses")}
+                      {item.statusLabel}
                     </div>
                   </div>
 
-                  {/* Tag Pills (Misal: Matematika, Pendidikan) */}
-                  {item.tags &&
-                    item.tags.length > 0 &&
-                    item.statusVariant !== "danger" && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {item.tags.map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-[#1d3d63] text-white text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                  {/* Tag Pills Relevansi Mata Pelajaran */}
+                  {item.tags && item.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-[#1d3d63] text-white text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
