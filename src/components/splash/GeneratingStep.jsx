@@ -82,6 +82,10 @@ function GeneratingStep({
   }, [runRecommendationFetch]);
 
   const handleContinueWithDemo = () => {
+    const minat = formatInterestsForBackend(selectedInterests);
+    const nilai = mapSubjectsToBackendPayload(selectedSubjects);
+    recommendationRepository.saveUserProfile({ minat, nilai });
+
     const demoMappedNodes = mapMajorNodesToUi(DEMO_MAJOR_NODES);
     if (onComplete) {
       onComplete(demoMappedNodes);

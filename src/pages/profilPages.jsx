@@ -44,6 +44,37 @@ function ProfilPages({
         .filter(Boolean)
     : ["Teknologi", "Informatika"];
 
+  // Ekstrak daftar nilai mata pelajaran secara dinamis dari hasil onboarding
+  const parsedSubjects = (() => {
+    if (!userProfile?.nilai) return null;
+
+    if (Array.isArray(userProfile.nilai)) {
+      const items = userProfile.nilai
+        .map((item) => ({
+          name: item?.name || item?.subject || "Mata Pelajaran",
+          score: Number(item?.grade ?? item?.score) || 80,
+        }))
+        .filter((item) => Boolean(item.name));
+      return items.length > 0 ? items : null;
+    }
+
+    if (typeof userProfile.nilai === "object") {
+      const entries = Object.entries(userProfile.nilai).map(([key, val]) => ({
+        name: key,
+        score: Number(val) || 80,
+      }));
+      return entries.length > 0 ? entries : null;
+    }
+
+    return null;
+  })();
+
+  const subjectsList = parsedSubjects || [
+    { name: "matematika", score: 85 },
+    { name: "fisika", score: 80 },
+    { name: "kimia", score: 90 },
+  ];
+
   // Handle Quit: Hapus seluruh data di IndexedDB & set has_onboarded ke false
   const handleQuit = async () => {
     try {
@@ -139,7 +170,7 @@ function ProfilPages({
               {interestsList.map((interest, idx) => (
                 <span
                   key={idx}
-                  className="bg-[#1d3d63] text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-2xs"
+                  className="bg-[#1d3d63] text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-2xs capitalize"
                 >
                   {interest}
                 </span>
@@ -147,40 +178,35 @@ function ProfilPages({
             </div>
           </div>
 
-          {/* Card Nilai Rapor Terdaftar */}
-          {userProfile?.nilai && (
-            <div className="bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
-              <span className="text-xs font-extrabold text-gray-800 tracking-tight block mb-2.5">
+          {/* Card Nilai Rapor Terdaftar dari Onboarding */}
+          <div className="bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-extrabold text-gray-800 tracking-tight">
                 Nilai Mata Pelajaran
               </span>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-white p-2 rounded-xl border border-slate-200/60 shadow-2xs">
-                  <span className="text-[10px] text-gray-500 font-bold block uppercase tracking-wider">
-                    MTK
-                  </span>
-                  <span className="text-sm font-extrabold text-gray-950">
-                    {userProfile.nilai.Matematika ?? 80}
-                  </span>
-                </div>
-                <div className="bg-white p-2 rounded-xl border border-slate-200/60 shadow-2xs">
-                  <span className="text-[10px] text-gray-500 font-bold block uppercase tracking-wider">
-                    IPA
-                  </span>
-                  <span className="text-sm font-extrabold text-gray-950">
-                    {userProfile.nilai.IPA ?? 80}
-                  </span>
-                </div>
-                <div className="bg-white p-2 rounded-xl border border-slate-200/60 shadow-2xs">
-                  <span className="text-[10px] text-gray-500 font-bold block uppercase tracking-wider">
-                    B.ING
-                  </span>
-                  <span className="text-sm font-extrabold text-gray-950">
-                    {userProfile.nilai.Bahasa_Inggris ?? 80}
-                  </span>
-                </div>
-              </div>
+              <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                {subjectsList.length} Mata Pelajaran
+              </span>
             </div>
-          )}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {subjectsList.map((subject, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white p-2 rounded-xl border border-slate-200/60 shadow-2xs flex flex-col items-center justify-between min-h-[58px]"
+                >
+                  <span
+                    className="text-[10px] sm:text-[11px] text-gray-600 font-bold block capitalize tracking-tight truncate w-full"
+                    title={subject.name}
+                  >
+                    {subject.name}
+                  </span>
+                  <span className="text-sm sm:text-base font-extrabold text-gray-950 mt-1">
+                    {subject.score}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
