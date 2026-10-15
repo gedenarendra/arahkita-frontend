@@ -3,6 +3,7 @@ import AnimationPages from "./pages/AnimationPages";
 import SplashPages from "./pages/splashPages";
 import GraphNodePages from "./pages/graphNodePages";
 import RecomendationPages from "./pages/recomendationPages";
+import ProfilPages from "./pages/profilPages";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
 import { getCachedMajors } from "./api/majorApi";
 
@@ -56,6 +57,16 @@ function App() {
         <RecomendationPages
           activeTab={activeTab}
           onTabChange={(tab) => setActiveTab(tab)}
+        />
+      ) : activeTab === "profile" ? (
+        <ProfilPages
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab)}
+          onResetOnboarding={() => {
+            setMajorNodes(null);
+            setShowOnboarding(true);
+            setActiveTab("home");
+          }}
         />
       ) : (
         <GraphNodePages
