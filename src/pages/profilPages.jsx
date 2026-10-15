@@ -192,7 +192,7 @@ function ProfilPages({
               {subjectsList.map((subject, idx) => (
                 <div
                   key={idx}
-                  className="bg-white p-2 rounded-xl border border-slate-200/60 shadow-2xs flex flex-col items-center justify-between min-h-[58px]"
+                  className="bg-white p-2 rounded-xl border border-slate-200/60 shadow-2xs flex flex-col items-center justify-between min-h-14.5"
                 >
                   <span
                     className="text-[10px] sm:text-[11px] text-gray-600 font-bold block capitalize tracking-tight truncate w-full"
