@@ -163,7 +163,7 @@ function GradesComponent({
                 if (localError) setLocalError("");
               }}
               placeholder="Cari mata pelajaran..."
-              className="w-full bg-transparent outline-none text-gray-800 text-sm font-medium placeholder:text-gray-400"
+              className="w-full bg-transparent outline-none text-gray-800 text-base font-medium placeholder:text-gray-400"
             />
             <button
               type="submit"
@@ -290,7 +290,7 @@ function GradesComponent({
                     onChange={(e) =>
                       handleGradeChange(subject.instanceId, e.target.value)
                     }
-                    className="w-full text-center text-gray-900 font-bold text-sm sm:text-base outline-none bg-transparent"
+                    className="w-full text-center text-gray-900 font-bold text-base outline-none bg-transparent"
                   />
                 </div>
 

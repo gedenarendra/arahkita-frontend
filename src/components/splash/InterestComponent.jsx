@@ -497,7 +497,7 @@ function InterestComponent({
                   ? "Maksimal 5 minat"
                   : "masukan sini"
               }
-              className="w-full text-center font-bold text-sm sm:text-base text-gray-900 placeholder:text-gray-950 placeholder:font-bold outline-none bg-transparent disabled:cursor-not-allowed"
+              className="w-full text-center font-bold text-base text-gray-900 placeholder:text-gray-950 placeholder:font-bold outline-none bg-transparent disabled:cursor-not-allowed"
             />
           </form>
 
