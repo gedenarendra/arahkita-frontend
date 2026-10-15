@@ -1,12 +1,12 @@
 /**
  * Ikon Navigasi Aplikasi Sesuai Mockup Desain:
  * 1. RecommendationNavIcon: Bola solid dengan lengkungan pantulan cahaya (arc highlight)
- * 2. HomeNavIcon: Rumah solid dengan cerobong asap dan pintu cut-out
+ * 2. HomeNavIcon: Dokumen/kartu solid dengan dua garis cut-out horizontal
  * 3. ProfileNavIcon: Siluet avatar solid (kepala lingkaran + bahu melengkung)
  */
 
 export function RecommendationNavIcon({
-  className = "w-7 h-7",
+  className = "w-6 h-6",
   cutoutColor = "#d9d9d9",
 }) {
   return (
@@ -29,7 +29,7 @@ export function RecommendationNavIcon({
 }
 
 export function HomeNavIcon({
-  className = "w-7 h-7",
+  className = "w-6 h-6",
   cutoutColor = "#d9d9d9",
 }) {
   return (
@@ -39,24 +39,17 @@ export function HomeNavIcon({
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Cerobong asap */}
-      <rect x="15.8" y="4.2" width="2.4" height="5.5" rx="0.3" />
-      {/* Atap & Bodi Rumah */}
-      <path d="M2.5 11.2L12 3.4L21.5 11.2L19.8 12.2V19.8C19.8 20.6 19.1 21.3 18.3 21.3H5.7C4.9 21.3 4.2 20.6 4.2 19.8V12.2L2.5 11.2Z" />
-      {/* Pintu cut-out */}
-      <rect
-        x="14.2"
-        y="12.8"
-        width="3.5"
-        height="7.2"
-        rx="0.5"
-        fill={cutoutColor}
-      />
+      {/* Dokumen / Kartu Utama */}
+      <rect x="3" y="2" width="18" height="20" rx="5" />
+      {/* Garis cut-out horizontal atas */}
+      <rect x="7.5" y="9" width="9" height="2" rx="1" fill={cutoutColor} />
+      {/* Garis cut-out horizontal bawah */}
+      <rect x="7.5" y="13" width="6" height="2" rx="1" fill={cutoutColor} />
     </svg>
   );
 }
 
-export function ProfileNavIcon({ className = "w-7 h-7" }) {
+export function ProfileNavIcon({ className = "w-6 h-6" }) {
   return (
     <svg
       className={className}
@@ -71,4 +64,3 @@ export function ProfileNavIcon({ className = "w-7 h-7" }) {
     </svg>
   );
 }
-

@@ -123,7 +123,10 @@ function normalizeItem(raw) {
 
   // Tags: extract dari subject_relevances jika ada
   let tags = [];
-  if (Array.isArray(raw.subject_relevances) && raw.subject_relevances.length > 0) {
+  if (
+    Array.isArray(raw.subject_relevances) &&
+    raw.subject_relevances.length > 0
+  ) {
     tags = raw.subject_relevances
       .map((sr) => sr?.subject_name || sr?.name || String(sr))
       .filter(Boolean);
@@ -168,9 +171,13 @@ function RecommendationSummaryComponent({
   const completedItems = items.filter((item) => item.is_completed);
   const highestCompleted =
     completedItems.length > 0
-      ? completedItems.reduce((highest, curr) =>
-          curr.matching_percentage > highest.matching_percentage ? curr : highest,
-        completedItems[0])
+      ? completedItems.reduce(
+          (highest, curr) =>
+            curr.matching_percentage > highest.matching_percentage
+              ? curr
+              : highest,
+          completedItems[0],
+        )
       : null;
 
   // Jika ada rekomendasi yang sudah selesai, tampilkan persentase tertinggi.
@@ -188,7 +195,8 @@ function RecommendationSummaryComponent({
   const topRadius = 48;
   const topCircumference = 2 * Math.PI * topRadius;
   const topDashoffset =
-    topCircumference - (Math.min(100, Math.max(0, topNumeric)) / 100) * topCircumference;
+    topCircumference -
+    (Math.min(100, Math.max(0, topNumeric)) / 100) * topCircumference;
 
   return (
     <div className="w-full h-full flex flex-col bg-white font-sans overflow-hidden select-none">
@@ -206,46 +214,45 @@ function RecommendationSummaryComponent({
         </div>
       </header>
 
-      {/* ── 2. Konten Scrollable ── */}
-      <div className="flex-1 min-h-0 px-6 pt-2 pb-3 overflow-y-auto max-w-md mx-auto w-full flex flex-col items-center">
-        {/* Lingkaran Gauge Besar: Persentase Terbesar (atau 0% jika belum ada yang selesai) */}
-        <div className="my-5 relative flex items-center justify-center">
-          <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 120 120">
+      {/* ── 2. Lingkaran Gauge Besar: Persentase Terbesar (Fixed / Non-scrollable) ── */}
+      <div className="shrink-0 my-4 relative flex items-center justify-center max-w-md mx-auto w-full px-6">
+        <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 120 120">
+          <circle
+            cx="60"
+            cy="60"
+            r={topRadius}
+            fill="none"
+            stroke="#f1f5f9"
+            strokeWidth="9"
+          />
+          {topNumeric > 0 && (
             <circle
               cx="60"
               cy="60"
               r={topRadius}
               fill="none"
-              stroke="#f1f5f9"
+              stroke="#3B82F6"
               strokeWidth="9"
+              strokeDasharray={topCircumference}
+              strokeDashoffset={topDashoffset}
+              strokeLinecap="round"
             />
-            {topNumeric > 0 && (
-              <circle
-                cx="60"
-                cy="60"
-                r={topRadius}
-                fill="none"
-                stroke="#3B82F6"
-                strokeWidth="9"
-                strokeDasharray={topCircumference}
-                strokeDashoffset={topDashoffset}
-                strokeLinecap="round"
-              />
-            )}
-          </svg>
+          )}
+        </svg>
 
-          {/* Teks di Tengah Lingkaran */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center select-none text-center px-4">
-            <span className="text-4xl font-extrabold text-gray-950 tracking-tight leading-none">
-              {topFormattedScore}
-            </span>
-            <span className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 truncate max-w-32">
-              {topLabel}
-            </span>
-          </div>
+        {/* Teks di Tengah Lingkaran */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center select-none text-center px-4">
+          <span className="text-4xl font-extrabold text-gray-950 tracking-tight leading-none">
+            {topFormattedScore}
+          </span>
+          <span className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 truncate max-w-32">
+            {topLabel}
+          </span>
         </div>
+      </div>
 
-        {/* ── 3. Daftar Card Jurusan ── */}
+      {/* ── 3. Daftar Card Jurusan (Scrollable Area) ── */}
+      <div className="flex-1 min-h-0 px-6 pt-1 pb-3 overflow-y-auto max-w-md mx-auto w-full scrollbar-thin">
         <div className="w-full space-y-4 pb-2">
           {items.map((item, index) => {
             const isClickable = item.is_completed;
