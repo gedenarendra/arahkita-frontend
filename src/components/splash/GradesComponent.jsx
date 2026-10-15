@@ -1,4 +1,8 @@
 import { useState } from "react";
+import {
+  MIN_SUBJECTS_COUNT,
+  MAX_SUBJECTS_COUNT,
+} from "../../utils/subjectMapping";
 
 function SearchIcon({ className = "w-4.5 h-4.5 text-gray-800" }) {
   return (
@@ -59,10 +63,13 @@ function GradesComponent({
   errorMessage = "",
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [localError, setLocalError] = useState("");
   // Local fallback jika props tidak disediakan
   const [localSubjects, setLocalSubjects] = useState([]);
   const subjects = setSelectedSubjects ? selectedSubjects : localSubjects;
   const updateSubjects = setSelectedSubjects || setLocalSubjects;
+
+  const displayError = errorMessage || localError;
 
   // Menambahkan mata pelajaran via form pencarian
   const handleSearchSubmit = (e) => {
@@ -70,6 +77,20 @@ function GradesComponent({
     const query = searchQuery.trim();
     if (!query) return;
 
+    if (subjects.length >= MAX_SUBJECTS_COUNT) {
+      setLocalError(`Maksimal ${MAX_SUBJECTS_COUNT} mata pelajaran sudah tercapai.`);
+      return;
+    }
+
+    const isDuplicate = subjects.some(
+      (s) => s.name.trim().toLowerCase() === query.toLowerCase(),
+    );
+    if (isDuplicate) {
+      setLocalError(`Mata pelajaran "${query}" sudah ditambahkan.`);
+      return;
+    }
+
+    setLocalError("");
     const newEntry = {
       instanceId: `${query.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}-${Math.random()}`,
       name: query,
@@ -83,6 +104,7 @@ function GradesComponent({
 
   // Menghapus mata pelajaran
   const handleRemoveSubject = (instanceId) => {
+    setLocalError("");
     const updated = subjects.filter((s) => s.instanceId !== instanceId);
     updateSubjects(updated);
     if (updated.length === 0 && subStep === 2 && onSubStepChange) {
@@ -136,7 +158,10 @@ function GradesComponent({
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (localError) setLocalError("");
+              }}
               placeholder="Cari mata pelajaran..."
               className="w-full bg-transparent outline-none text-gray-800 text-sm font-medium placeholder:text-gray-400"
             />
@@ -149,10 +174,10 @@ function GradesComponent({
             </button>
           </form>
 
-          {/* Pesan Kesalahan jika user klik Next tanpa mata pelajaran */}
-          {errorMessage && (
+          {/* Pesan Kesalahan jika user klik Next / tambah melebihi limit */}
+          {displayError && (
             <p className="pt-2 text-amber-200 text-xs text-center font-medium px-4">
-              {errorMessage}
+              {displayError}
             </p>
           )}
 
@@ -180,26 +205,42 @@ function GradesComponent({
 
           {/* Tombol Lanjut ke Isi Nilai setelah menambahkan mata pelajaran */}
           {subjects.length > 0 && onSubStepChange && (
-            <button
-              type="button"
-              onClick={() => onSubStepChange(2)}
-              className="mt-5 px-4.5 py-2 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <span>Lanjut Isi Nilai</span>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div className="flex flex-col items-center gap-1.5 mt-5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (subjects.length < MIN_SUBJECTS_COUNT) {
+                    setLocalError(
+                      `Tambahkan minimal ${MIN_SUBJECTS_COUNT} mata pelajaran sebelum mengisi nilai.`,
+                    );
+                    return;
+                  }
+                  setLocalError("");
+                  onSubStepChange(2);
+                }}
+                className="px-4.5 py-2 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
+                <span>Lanjut Isi Nilai</span>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+              {subjects.length < MIN_SUBJECTS_COUNT && (
+                <span className="text-[11px] text-white/70">
+                  Minimal {MIN_SUBJECTS_COUNT} mata pelajaran ({subjects.length}/{MIN_SUBJECTS_COUNT})
+                </span>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -207,6 +248,11 @@ function GradesComponent({
       {/* ── 2. Komponen Jika Sudah Ada Mata Pelajaran (Fase Pengisian Nilai) ── */}
       {subStep === 2 && (
         <div className="mt-6 sm:mt-5 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
+          {displayError && (
+            <p className="pb-3 text-amber-200 text-xs text-center font-medium px-4">
+              {displayError}
+            </p>
+          )}
           <div className="space-y-3 sm:space-y-3.5 w-full max-w-70 sm:max-w-77.5">
             {subjects.map((subject) => (
               <div
@@ -265,7 +311,10 @@ function GradesComponent({
           {onSubStepChange && (
             <button
               type="button"
-              onClick={() => onSubStepChange(1)}
+              onClick={() => {
+                setLocalError("");
+                onSubStepChange(1);
+              }}
               className="mt-3.5 text-xs text-white/80 hover:text-white flex items-center gap-1 font-semibold transition-colors cursor-pointer"
             >
               + Tambah Mata Pelajaran

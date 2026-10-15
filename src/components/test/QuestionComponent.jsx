@@ -17,6 +17,7 @@ function QuestionComponent({
   progress,
   isReadOnly = false,
   isSubmitting = false,
+  errorMessage = "",
   onBack,
   onSubmit,
 }) {
@@ -279,7 +280,7 @@ function QuestionComponent({
                 value={essayAnswer}
                 onChange={(e) => handleEssayChange(e.target.value)}
                 readOnly={isReadOnly || isSubmitting}
-                placeholder={isReadOnly ? "Tidak ada jawaban tertulis." : ""}
+                placeholder={isReadOnly ? "Tidak ada jawaban tertulis." : "Tuliskan pandangan atau solusimu di sini..."}
                 rows={7}
                 className={`w-full rounded-xs p-4 h-48 sm:h-52 text-xs sm:text-sm outline-none resize-none font-medium transition-all ${
                   isReadOnly
@@ -287,10 +288,27 @@ function QuestionComponent({
                     : "bg-[#D9D9D9] text-gray-900 focus:ring-1 focus:ring-blue-500"
                 }`}
               />
+              {!isReadOnly && (
+                <p className="text-[11px] text-gray-500 mt-1.5 italic">
+                  {essayAnswer.trim().length === 0
+                    ? "Tuliskan jawaban analisismu minimal beberapa kata sebelum mengirim."
+                    : `${essayAnswer.trim().length} karakter`}
+                </p>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* ── 2.5 In-place Error Banner Jika Terjadi Kegagalan Jaringan / API ── */}
+      {errorMessage && !isReadOnly && (
+        <div className="shrink-0 mx-5 mb-2 px-3.5 py-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-red-700 text-xs shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="text-red-500 font-bold shrink-0">⚠️</span>
+            <span className="leading-tight">{errorMessage}</span>
+          </div>
+        </div>
+      )}
 
       {/* ── 3. Tombol Aksi (Back & Submit Sesuai Gambar / Review Kembali) ── */}
       {isReadOnly ? (
@@ -316,8 +334,20 @@ function QuestionComponent({
           <button
             type="button"
             onClick={handleNextOrSubmit}
-            disabled={isSubmitting}
-            className="w-28 h-9 bg-[#0970DD] hover:bg-[#0765C8] active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center disabled:opacity-75"
+            disabled={
+              isSubmitting ||
+              (type === "multiple"
+                ? selectedOption === null || selectedOption === undefined
+                : !essayAnswer.trim())
+            }
+            className={`w-28 h-9 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center ${
+              isSubmitting ||
+              (type === "multiple"
+                ? selectedOption === null || selectedOption === undefined
+                : !essayAnswer.trim())
+                ? "bg-[#0970DD]/50 text-white/80 cursor-not-allowed"
+                : "bg-[#0970DD] hover:bg-[#0765C8] active:scale-95 text-white cursor-pointer"
+            }`}
           >
             {isSubmitting ? (
               <div className="flex items-center gap-1.5">

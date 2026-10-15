@@ -11,6 +11,7 @@ function TestPages({
   progress,
   isReadOnly = false,
   isSubmitting = false,
+  errorMessage = "",
   onBack,
   onAgreeTerms,
   onSubmitQuestion,
@@ -35,6 +36,7 @@ function TestPages({
       progress={progress}
       isReadOnly={isReadOnly}
       isSubmitting={isSubmitting}
+      errorMessage={errorMessage}
       onBack={onBack}
       onSubmit={onSubmitQuestion}
     />

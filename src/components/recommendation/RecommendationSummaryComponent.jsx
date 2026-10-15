@@ -321,7 +321,7 @@ function RecommendationSummaryComponent({
                       {item.tags.map((tag, idx) => (
                         <span
                           key={idx}
-                          className="bg-[#1d3d63] text-white text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs"
+                          className="bg-[#1d3d63] text-white text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs capitalize"
                         >
                           {tag}
                         </span>

@@ -15,7 +15,7 @@ Dokumen ini adalah acuan utama bagi AI Coding Agent dan pengembang manusia dalam
 
 ### 1.2. Dua Fitur Utama Prototipe
 1. **Onboarding Survey & Rekomendasi Jurusan (Root Nodes)**:
-   - Pengguna baru menjalani proses onboarding terarah: Welcome screen, pengenalan minat, input nilai mata pelajaran (`Matematika`, `IPA`, `Bahasa_Inggris`), dan pemilihan minat berbasis visual bubble/tags (maksimal 5 minat).
+   - Pengguna baru menjalani proses onboarding terarah: Welcome screen, pengenalan minat, input nilai mata pelajaran dinamis (3 hingga 10 mata pelajaran, skor 0–100), dan pemilihan minat berbasis visual bubble/tags (maksimal 5 minat).
    - Frontend memanggil endpoint `POST /api/v1/majors/recommend` pada backend LLM selama fase animasi *Generating*.
    - Hasil rekomendasi jurusan (2–6 node visual `MajorNode`) disimpan ke IndexedDB lokal (Dexie) dan dipetakan ke layout visual node silinder isometrik 3D.
 2. **Eksplorasi Pohon Jurusan & Interactive Trial (Child Nodes & Summary)**:
@@ -199,21 +199,24 @@ Seluruh kode dalam repositori ini **wajib lolos linter ESLint bawaan tanpa error
 
 ### 4.3. Normalisasi Payload & Defensive Programming (Kontrak Backend)
 - Backend menggunakan validasi ketat Pydantic (HTTP 422 jika format tidak cocok).
-- **Semua payload nilai WAJIB melalui [`mapSubjectsToBackendPayload`](src/utils/subjectMapping.js)** untuk menjamin tersedianya 3 kunci utama:
+- **Semua payload nilai WAJIB melalui [`mapSubjectsToBackendPayload`](src/utils/subjectMapping.js)** untuk menjamin kriteria skema backend:
+  - Jumlah mata pelajaran: **3 hingga 10 mata pelajaran**.
+  - Key dinormalisasi ke huruf kecil murni (*lowercase*, misal `"fisika"`, `"matematika"`).
+  - Skor bernilai integer 0–100.
   ```json
   {
-    "Matematika": 85,
-    "IPA": 80,
-    "Bahasa_Inggris": 90
+    "matematika": 85,
+    "fisika": 80,
+    "kimia": 90
   }
   ```
-- Gunakan constant yang terpusat di `src/utils/subjectMapping.js`:
+- Gunakan utility dan constant yang terpusat di `src/utils/subjectMapping.js`:
   ```javascript
-  import { mapSubjectsToBackendPayload } from '../utils/subjectMapping';
+  import { mapSubjectsToBackendPayload, MIN_SUBJECTS_COUNT, MAX_SUBJECTS_COUNT } from '../utils/subjectMapping';
 
   const sanitizedNilai = mapSubjectsToBackendPayload(userInputNilai);
   ```
-- Nilai default adalah `80` jika mata pelajaran wajib belum diisi user pada UI.
+- Nilai default adalah `80` jika skor belum diisi user pada UI.
 
 ### 4.4. Manajemen Database Lokal (IndexedDB via Dexie)
 - Rekomendasi jurusan baru dari backend adalah kumpulan satu kesatuan (*batch*).

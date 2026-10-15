@@ -1,111 +1,98 @@
 /**
- * Mapping constant dan utility untuk normalisasi payload nilai mata pelajaran ke backend.
+ * Mapping constant dan utility untuk normalisasi payload nilai mata pelajaran dinamis ke backend.
+ * Sesuai arsitektur terbaru:
+ * - Mata pelajaran bersifat dinamis (3 hingga 10 mata pelajaran)
+ * - Semua key dinormalisasi menjadi huruf kecil murni (lowercase) tanpa spasi ekstra
+ * - Skor bernilai integer antara 0 hingga 100
  */
 
-export const BACKEND_SUBJECT_KEYS = Object.freeze({
-  MATEMATIKA: "Matematika",
-  BAHASA_INGGRIS: "Bahasa_Inggris",
-  IPA: "IPA",
-});
-
-/**
- * Pemetaan resmi mata pelajaran antara backend key dan label UI frontend.
- */
-export const SUBJECT_MAPPING = Object.freeze({
-  Matematika: "Matematika",
-  Bahasa_Inggris: "Bahasa Inggris",
-  IPA: "IPA",
-});
-
+export const MIN_SUBJECTS_COUNT = 3;
+export const MAX_SUBJECTS_COUNT = 10;
 export const DEFAULT_GRADE = 80;
 
 /**
- * Mencocokkan string nama mata pelajaran dari input user ke backend key resmi.
+ * Normalisasi nama mata pelajaran menjadi key lowercase standar backend.
  *
  * @param {string} rawName
- * @returns {"Matematika" | "Bahasa_Inggris" | "IPA" | null}
+ * @returns {string}
  */
-export function matchSubjectToBackendKey(rawName = "") {
-  if (typeof rawName !== "string") return null;
-
-  const normalized = rawName.trim().toLowerCase();
-
-  // Pencocokan Bahasa Inggris (contoh: "Bahasa Inggris", "bahasa inggris", "inggris", "Bahasa_Inggris")
-  if (
-    normalized.includes("inggris") ||
-    normalized === "bahasa inggris" ||
-    normalized === "bahasa_inggris"
-  ) {
-    return BACKEND_SUBJECT_KEYS.BAHASA_INGGRIS;
-  }
-
-  // Pencocokan Matematika (contoh: "Matematika", "matematika", "math")
-  if (normalized.includes("matematika") || normalized === "math") {
-    return BACKEND_SUBJECT_KEYS.MATEMATIKA;
-  }
-
-  // Pencocokan IPA (contoh: "IPA", "ipa", "ilmu pengetahuan alam", "sains")
-  if (
-    normalized === "ipa" ||
-    normalized.startsWith("ipa ") ||
-    normalized === "ilmu pengetahuan alam" ||
-    normalized === "sains"
-  ) {
-    return BACKEND_SUBJECT_KEYS.IPA;
-  }
-
-  return null;
+export function normalizeSubjectKey(rawName = "") {
+  if (typeof rawName !== "string") return "";
+  return rawName.trim().toLowerCase();
 }
 
 /**
- * Menghasilkan objek nilai yang selalu valid sesuai skema backend:
+ * Memvalidasi apakah jumlah mata pelajaran memenuhi kriteria (minimal 3, maksimal 10).
+ *
+ * @param {Array<any> | Record<string, any>} subjects
+ * @returns {{ isValid: boolean, error: string | null }}
+ */
+export function validateSubjectsCount(subjects) {
+  const count = Array.isArray(subjects)
+    ? subjects.length
+    : subjects && typeof subjects === "object"
+      ? Object.keys(subjects).length
+      : 0;
+
+  if (count < MIN_SUBJECTS_COUNT) {
+    return {
+      isValid: false,
+      error: `Silakan tambahkan minimal ${MIN_SUBJECTS_COUNT} mata pelajaran terlebih dahulu.`,
+    };
+  }
+
+  if (count > MAX_SUBJECTS_COUNT) {
+    return {
+      isValid: false,
+      error: `Maksimal hanya dapat memilih ${MAX_SUBJECTS_COUNT} mata pelajaran.`,
+    };
+  }
+
+  return { isValid: true, error: null };
+}
+
+/**
+ * Menghasilkan dictionary nilai mata pelajaran dinamis yang selalu valid sesuai skema backend:
  * {
- *   "Matematika": number,
- *   "IPA": number,
- *   "Bahasa_Inggris": number
+ *   "fisika": 85,
+ *   "kimia": 80,
+ *   "matematika": 90
  * }
  *
- * Jika ada mata pelajaran yang tidak diisi user, otomatis diisi nilai default (80).
- *
  * @param {Array<{ name: string, grade: number|string }> | Record<string, number|string>} input
- * @param {number} defaultGrade - Nilai default jika mata pelajaran belum diisi (default: 80)
- * @returns {{ Matematika: number, IPA: number, Bahasa_Inggris: number }}
+ * @param {number} defaultGrade - Nilai default jika skor belum diisi (default: 80)
+ * @returns {Record<string, number>}
  */
 export function mapSubjectsToBackendPayload(
   input,
   defaultGrade = DEFAULT_GRADE
 ) {
-  // Nilai awal seluruh kunci yang wajib ada
-  const payload = {
-    [BACKEND_SUBJECT_KEYS.MATEMATIKA]: defaultGrade,
-    [BACKEND_SUBJECT_KEYS.IPA]: defaultGrade,
-    [BACKEND_SUBJECT_KEYS.BAHASA_INGGRIS]: defaultGrade,
-  };
+  const payload = {};
 
   const parseGrade = (val) => {
     if (val === "" || val === undefined || val === null) return defaultGrade;
     const num = Number(val);
-    return isNaN(num) ? defaultGrade : num;
+    if (isNaN(num)) return defaultGrade;
+    return Math.min(100, Math.max(0, Math.round(num)));
   };
 
   // Jika input berupa Array (dari state UI selectedSubjects)
   if (Array.isArray(input)) {
     input.forEach((item) => {
-      if (!item?.name) return;
-      const matchedKey = matchSubjectToBackendKey(item.name);
-      if (matchedKey) {
-        payload[matchedKey] = parseGrade(item.grade);
+      const cleanKey = normalizeSubjectKey(item?.name);
+      if (cleanKey) {
+        payload[cleanKey] = parseGrade(item.grade);
       }
     });
     return payload;
   }
 
-  // Jika input berupa Objek key-value (misal payload yang sudah dibentuk sebelumnya)
+  // Jika input berupa Objek key-value
   if (input && typeof input === "object") {
     Object.entries(input).forEach(([key, val]) => {
-      const matchedKey = matchSubjectToBackendKey(key);
-      if (matchedKey) {
-        payload[matchedKey] = parseGrade(val);
+      const cleanKey = normalizeSubjectKey(key);
+      if (cleanKey) {
+        payload[cleanKey] = parseGrade(val);
       }
     });
   }
@@ -114,9 +101,10 @@ export function mapSubjectsToBackendPayload(
 }
 
 export default {
-  BACKEND_SUBJECT_KEYS,
-  SUBJECT_MAPPING,
+  MIN_SUBJECTS_COUNT,
+  MAX_SUBJECTS_COUNT,
   DEFAULT_GRADE,
-  matchSubjectToBackendKey,
+  normalizeSubjectKey,
+  validateSubjectsCount,
   mapSubjectsToBackendPayload,
 };

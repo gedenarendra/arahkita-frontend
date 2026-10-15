@@ -114,11 +114,18 @@ export async function evaluateEssayAnswer({
   minicase_id,
 }) {
   const trimmedAnswer = String(user_answer || '').trim();
+  if (!trimmedAnswer) {
+    return {
+      success: false,
+      data: null,
+      error: 'Jawaban esai tidak boleh kosong.',
+    };
+  }
 
   const payload = {
     question: String(question || 'Pertanyaan studi kasus'),
     evaluation_hint: String(evaluation_hint || 'Kriteria analitis dan minat'),
-    user_answer: trimmedAnswer || 'Tidak ada jawaban tertulis.',
+    user_answer: trimmedAnswer,
     minicase_id: minicase_id && UUID_REGEX.test(String(minicase_id)) ? String(minicase_id) : null,
   };
 
@@ -148,9 +155,11 @@ export async function evaluateEssayAnswer({
  * Backend menghitung matching_percentage, narasi preview, dan jalur karir.
  *
  * @param {object} major - Objek jurusan { id, major_name }
+ * @param {object} [options]
+ * @param {boolean} [options.forceRefresh=false] - Paksa request baru ke server mengabaikan cache
  * @returns {Promise<{ success: boolean, data: object|null, fromCache: boolean, error: string|null }>}
  */
-export async function generateMajorPreview(major) {
+export async function generateMajorPreview(major, { forceRefresh = false } = {}) {
   if (!major?.id) {
     return {
       success: false,
@@ -161,17 +170,29 @@ export async function generateMajorPreview(major) {
   }
 
   // 1. Cek apakah preview untuk jurusan ini sudah tersimpan di IndexedDB
-  const cachedPreview = await recommendationRepository.getPreviewByMajorId(major.id);
-  if (cachedPreview) {
+  if (!forceRefresh) {
+    const cachedPreview = await recommendationRepository.getPreviewByMajorId(major.id);
+    if (cachedPreview) {
+      return {
+        success: true,
+        data: cachedPreview,
+        fromCache: true,
+        error: null,
+      };
+    }
+  }
+
+  // 2. Validasi format UUID v4 sebelum request jaringan
+  if (!UUID_REGEX.test(String(major.id))) {
     return {
-      success: true,
-      data: cachedPreview,
-      fromCache: true,
-      error: null,
+      success: false,
+      data: null,
+      fromCache: false,
+      error: 'ID Jurusan bukan format UUID v4 yang valid',
     };
   }
 
-  // 2. Ambil metrik performa lokal dari IndexedDB
+  // 3. Ambil metrik performa lokal dari IndexedDB
   const metrics = await minicaseRepository.calculateMajorMetrics(major.id);
   const userProfile = await recommendationRepository.getUserProfile();
 
@@ -181,10 +202,11 @@ export async function generateMajorPreview(major) {
     essay_analytical_score: metrics.essay_analytical_score,
     essay_interest_score: metrics.essay_interest_score,
     total_trials_completed: metrics.total_trials_completed,
+    user_satisfaction_rating: null,
     profile: userProfile || null,
   };
 
-  // 3. Panggil endpoint backend POST /api/v1/preview/{major_node_id}
+  // 4. Panggil endpoint backend POST /api/v1/preview/{major_node_id}
   const response = await apiClient.post(`/api/v1/preview/${major.id}`, payload);
 
   if (response.success && response.data) {

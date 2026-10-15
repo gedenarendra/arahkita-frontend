@@ -8,6 +8,10 @@ import {
   formatInterestsForBackend,
   MAX_INTERESTS_COUNT,
 } from "../utils/interestUtils";
+import {
+  MIN_SUBJECTS_COUNT,
+  MAX_SUBJECTS_COUNT,
+} from "../utils/subjectMapping";
 
 function SplashPages({ onComplete }) {
   // Step 1: Welcome | Step 2: Interest Intro | Step 3: Grades | Step 4: Interest Minat | Step 5: Generating
@@ -24,9 +28,15 @@ function SplashPages({ onComplete }) {
     // Jika di Step 3 (Grades)
     if (currentStep === 3) {
       if (gradesSubStep === 1) {
-        if (selectedSubjects.length === 0) {
+        if (selectedSubjects.length < MIN_SUBJECTS_COUNT) {
           setGradesError(
-            "Silakan cari dan tambahkan minimal satu mata pelajaran terlebih dahulu.",
+            `Silakan cari dan tambahkan minimal ${MIN_SUBJECTS_COUNT} mata pelajaran terlebih dahulu.`,
+          );
+          return;
+        }
+        if (selectedSubjects.length > MAX_SUBJECTS_COUNT) {
+          setGradesError(
+            `Maksimal hanya dapat memilih ${MAX_SUBJECTS_COUNT} mata pelajaran.`,
           );
           return;
         }
@@ -35,6 +45,19 @@ function SplashPages({ onComplete }) {
         return;
       }
       if (gradesSubStep === 2) {
+        if (selectedSubjects.length < MIN_SUBJECTS_COUNT) {
+          setGradesError(
+            `Silakan tambahkan minimal ${MIN_SUBJECTS_COUNT} mata pelajaran terlebih dahulu.`,
+          );
+          setGradesSubStep(1);
+          return;
+        }
+        if (selectedSubjects.length > MAX_SUBJECTS_COUNT) {
+          setGradesError(
+            `Maksimal hanya dapat memilih ${MAX_SUBJECTS_COUNT} mata pelajaran.`,
+          );
+          return;
+        }
         setGradesError("");
         setCurrentStep(4);
         return;

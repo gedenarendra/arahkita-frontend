@@ -38,6 +38,9 @@ function MajorTestComponent({
 
   // State untuk submit esai dan pembuatan preview trial
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [testErrorMessage, setTestErrorMessage] = useState("");
+  const [showSpamWarningModal, setShowSpamWarningModal] = useState(false);
+  const [pendingSpamSubmission, setPendingSpamSubmission] = useState(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [previewResult, setPreviewResult] = useState(null);
@@ -183,6 +186,7 @@ function MajorTestComponent({
     const lvl = node?.data?.level;
     if (!lvl) return;
 
+    setTestErrorMessage("");
     const isCompleted = completedLevels.includes(lvl);
 
     if (lvl === 1) {
@@ -200,7 +204,10 @@ function MajorTestComponent({
     }
   };
 
-  const checkAndTriggerCompletion = async (currentCompletedLevels) => {
+  const checkAndTriggerCompletion = async (
+    currentCompletedLevels,
+    { forceRefresh = false } = {}
+  ) => {
     if (!allGeneratedNodes || allGeneratedNodes.length === 0) return;
 
     const allLevels = allGeneratedNodes.map((n) => n.data.level);
@@ -212,11 +219,14 @@ function MajorTestComponent({
       setShowCompletionModal(true);
       setIsGeneratingPreview(true);
       try {
-        const res = await generateMajorPreview({
-          id: majorData.id,
-          major_name: major,
-          circle_color: majorData.circle_color,
-        });
+        const res = await generateMajorPreview(
+          {
+            id: majorData.id,
+            major_name: major,
+            circle_color: majorData.circle_color,
+          },
+          { forceRefresh }
+        );
         if (res.success && res.data) {
           setPreviewResult(res.data);
         }
@@ -226,50 +236,20 @@ function MajorTestComponent({
     }
   };
 
-  const handleSubmitQuestion = async (submitData) => {
-    if (activeTestView?.isReadOnly) {
-      setActiveTestView(null);
-      return;
-    }
-
-    const currentLvl = activeTestView.level;
+  const finalizeQuestionSubmission = (currentLvl, rawMinicaseId, answer) => {
     const newCompleted = [...new Set([...completedLevels, currentLvl])];
     setCompletedLevels(newCompleted);
 
-    const rawMinicase = activeTestView.questionData?.raw;
-
-    if (rawMinicase?.id) {
-      if (activeTestView.questionData?.type === "essay") {
-        setIsSubmitting(true);
-        try {
-          await evaluateEssayAnswer({
-            question: rawMinicase.question || activeTestView.questionData?.question,
-            evaluation_hint: rawMinicase.evaluation_hint,
-            user_answer: submitData?.answer,
-            minicase_id: rawMinicase.id,
-          });
-        } finally {
-          setIsSubmitting(false);
-        }
-      } else {
-        await minicaseRepository.submitMultipleChoiceAnswer(
-          rawMinicase.id,
-          submitData?.answer,
-          rawMinicase.correct_answer
-        );
-      }
-
-      // Update state minicases in memory
+    if (rawMinicaseId) {
       setMinicases((prev) =>
         prev?.map((mc) =>
-          mc.id === rawMinicase.id
-            ? { ...mc, is_done: true, user_answer: submitData?.answer }
+          mc.id === rawMinicaseId
+            ? { ...mc, is_done: true, user_answer: answer }
             : mc
         )
       );
     }
 
-    // Buka level berikutnya jika menyelesaikan level terakhir yang terbuka
     if (
       currentLvl >= 2 &&
       currentLvl === unlockedLevel &&
@@ -280,9 +260,69 @@ function MajorTestComponent({
     }
 
     setActiveTestView(null);
-
-    // Cek apakah seluruh level telah selesai
+    setTestErrorMessage("");
     checkAndTriggerCompletion(newCompleted);
+  };
+
+  const handleForceContinueSpam = () => {
+    if (!pendingSpamSubmission) return;
+    const { level, rawMinicase, submitData } = pendingSpamSubmission;
+    setShowSpamWarningModal(false);
+    setPendingSpamSubmission(null);
+    finalizeQuestionSubmission(level, rawMinicase?.id, submitData?.answer);
+  };
+
+  const handleSubmitQuestion = async (submitData) => {
+    if (activeTestView?.isReadOnly) {
+      setActiveTestView(null);
+      return;
+    }
+
+    setTestErrorMessage("");
+    const currentLvl = activeTestView.level;
+    const rawMinicase = activeTestView.questionData?.raw;
+
+    if (rawMinicase?.id) {
+      if (activeTestView.questionData?.type === "essay") {
+        setIsSubmitting(true);
+        const res = await evaluateEssayAnswer({
+          question: rawMinicase.question || activeTestView.questionData?.question,
+          evaluation_hint: rawMinicase.evaluation_hint,
+          user_answer: submitData?.answer,
+          minicase_id: rawMinicase.id,
+        });
+        setIsSubmitting(false);
+
+        if (!res.success) {
+          setTestErrorMessage(
+            res.error || "Gagal terhubung ke AI. Silakan periksa koneksi dan coba lagi."
+          );
+          return;
+        }
+
+        // Cek Guardrail Anti-Spam: jika is_serious_attempt bernilai false
+        if (res.data?.is_serious_attempt === false) {
+          setPendingSpamSubmission({
+            submitData,
+            rawMinicase,
+            level: currentLvl,
+          });
+          setShowSpamWarningModal(true);
+          return;
+        }
+
+        finalizeQuestionSubmission(currentLvl, rawMinicase.id, submitData?.answer);
+      } else {
+        await minicaseRepository.submitMultipleChoiceAnswer(
+          rawMinicase.id,
+          submitData?.answer,
+          rawMinicase.correct_answer
+        );
+        finalizeQuestionSubmission(currentLvl, rawMinicase.id, submitData?.answer);
+      }
+    } else {
+      finalizeQuestionSubmission(currentLvl, null, submitData?.answer);
+    }
   };
 
   // Jika sedang membuka layar soal atau syarat ketentuan
@@ -299,7 +339,11 @@ function MajorTestComponent({
         totalQuestions={Math.max(1, allGeneratedNodes.length - 1)}
         isReadOnly={activeTestView.isReadOnly}
         isSubmitting={isSubmitting}
-        onBack={() => setActiveTestView(null)}
+        errorMessage={testErrorMessage}
+        onBack={() => {
+          setTestErrorMessage("");
+          setActiveTestView(null);
+        }}
         onAgreeTerms={() => {
           if (!completedLevels.includes(1)) {
             const newCompleted = [...new Set([...completedLevels, 1])];
@@ -537,18 +581,23 @@ function MajorTestComponent({
                 {Array.isArray(previewResult.career_paths) &&
                   previewResult.career_paths.length > 0 && (
                     <div className="w-full text-left mb-5">
-                      <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">
-                        Peluang Karir Terkait
-                      </h4>
-                      <div className="space-y-2">
-                        {previewResult.career_paths.slice(0, 2).map((cp, idx) => (
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                          Peluang Karir Terkait
+                        </h4>
+                        <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {previewResult.career_paths.length} Jalur Profesi
+                        </span>
+                      </div>
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        {previewResult.career_paths.map((cp, idx) => (
                           <div
                             key={cp.id || `career-${idx}`}
-                            className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-left"
+                            className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-left transition-all hover:bg-slate-100/70"
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold text-gray-900">
-                                {cp.career_name}
+                                {cp.title || cp.career_name}
                               </span>
                               {cp.salary_range && (
                                 <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
@@ -556,9 +605,9 @@ function MajorTestComponent({
                                 </span>
                               )}
                             </div>
-                            {cp.description && (
-                              <p className="text-[11px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                                {cp.description}
+                            {(cp.detail || cp.description) && (
+                              <p className="text-[11px] text-gray-600 mt-1.5 leading-relaxed font-normal">
+                                {cp.detail || cp.description}
                               </p>
                             )}
                           </div>
@@ -601,13 +650,53 @@ function MajorTestComponent({
                 </p>
                 <button
                   type="button"
-                  onClick={() => checkAndTriggerCompletion(completedLevels)}
+                  onClick={() =>
+                    checkAndTriggerCompletion(completedLevels, {
+                      forceRefresh: true,
+                    })
+                  }
                   className="px-4 py-2 bg-[#0070E0] hover:bg-[#0060C5] text-white font-semibold text-xs rounded-xl cursor-pointer"
                 >
                   Coba Analisis Ulang
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── 6. Modal Edukatif Anti-Spam (Guardrail: is_serious_attempt == false) ── */}
+      {showSpamWarningModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-3 shadow-inner">
+              💡
+            </div>
+            <h3 className="text-lg font-bold text-gray-950 tracking-tight mb-2">
+              Jawaban Belum Relevan
+            </h3>
+            <p className="text-xs text-gray-600 leading-relaxed mb-6">
+              Jawabanmu belum sesuai dengan skenario studi kasus. Yuk, coba ceritakan solusimu agar minat dan potensi analisismu terpetakan lebih akurat!
+            </p>
+            <div className="w-full flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSpamWarningModal(false);
+                  setPendingSpamSubmission(null);
+                }}
+                className="w-full py-3 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                Perbaiki Jawaban
+              </button>
+              <button
+                type="button"
+                onClick={handleForceContinueSpam}
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-600 font-semibold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Tetap Lanjutkan
+              </button>
+            </div>
           </div>
         </div>
       )}
