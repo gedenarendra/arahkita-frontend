@@ -1,24 +1,88 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { formatInterestsForBackend } from "../../utils/interestUtils";
+import { mapSubjectsToBackendPayload } from "../../utils/subjectMapping";
+import { fetchRecommendedMajors, mapMajorNodesToUi } from "../../api/majorApi";
 
-function GeneratingStep({ onComplete }) {
+const DEMO_MAJOR_NODES = [
+  { id: "demo-1", major_name: "SOSIOLOGI", circle_color: "#0970DD", child_id: null },
+  { id: "demo-2", major_name: "SPORT", circle_color: "#0970DD", child_id: null },
+  { id: "demo-3", major_name: "MANAGEMENT", circle_color: "#0970DD", child_id: null },
+  { id: "demo-4", major_name: "MATH", circle_color: "#0970DD", child_id: null },
+  { id: "demo-5", major_name: "TEKNOLOGI", circle_color: "#0970DD", child_id: null },
+];
+
+function GeneratingStep({
+  onComplete,
+  selectedSubjects = [],
+  selectedInterests = [],
+}) {
   const [dots, setDots] = useState("..");
+  const [status, setStatus] = useState("loading"); // "loading" | "error"
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
+    if (status !== "loading") return;
+
     const dotInterval = setInterval(() => {
       setDots((prev) => (prev === "..." ? "." : prev + "."));
     }, 500);
 
-    const finishTimeout = setTimeout(() => {
-      if (onComplete) {
-        onComplete();
-      }
-    }, 3200);
+    return () => clearInterval(dotInterval);
+  }, [status]);
 
-    return () => {
-      clearInterval(dotInterval);
-      clearTimeout(finishTimeout);
-    };
-  }, [onComplete]);
+  const runRecommendationFetch = useCallback(async () => {
+    setStatus("loading");
+    setErrorMessage("");
+
+    const startTime = Date.now();
+    const minat = formatInterestsForBackend(selectedInterests);
+    const nilai = mapSubjectsToBackendPayload(selectedSubjects);
+
+    try {
+      const result = await fetchRecommendedMajors({ minat, nilai });
+
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, 1800 - elapsed);
+
+      if (
+        result.success &&
+        Array.isArray(result.mappedNodes) &&
+        result.mappedNodes.length > 0
+      ) {
+        setTimeout(() => {
+          if (onComplete) onComplete(result.mappedNodes);
+        }, remainingTime);
+      } else {
+        setTimeout(() => {
+          setStatus("error");
+          setErrorMessage(
+            result.error || "Gagal memuat rekomendasi jurusan dari server."
+          );
+        }, remainingTime);
+      }
+    } catch (err) {
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, 1800 - elapsed);
+
+      setTimeout(() => {
+        setStatus("error");
+        setErrorMessage(
+          err.message || "Terjadi kesalahan saat memproses rekomendasi jurusan."
+        );
+      }, remainingTime);
+    }
+  }, [selectedInterests, selectedSubjects, onComplete]);
+
+  useEffect(() => {
+    runRecommendationFetch();
+  }, [runRecommendationFetch]);
+
+  const handleContinueWithDemo = () => {
+    const demoMappedNodes = mapMajorNodesToUi(DEMO_MAJOR_NODES);
+    if (onComplete) {
+      onComplete(demoMappedNodes);
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
@@ -53,7 +117,11 @@ function GeneratingStep({ onComplete }) {
         {/* Folder Biru & Kertas Tumpuk */}
         <div className="relative z-20 mt-12">
           {/* Kertas di Dalam Folder */}
-          <div className="absolute -top-6 left-3 w-40 h-24 bg-white/95 rounded-t-lg shadow-md transform -rotate-3 transition-transform animate-bounce">
+          <div
+            className={`absolute -top-6 left-3 w-40 h-24 bg-white/95 rounded-t-lg shadow-md transform -rotate-3 transition-transform ${
+              status === "loading" ? "animate-bounce" : ""
+            }`}
+          >
             <div className="p-2 space-y-1.5 opacity-40">
               <div className="h-1.5 bg-gray-400 rounded w-3/4"></div>
               <div className="h-1.5 bg-gray-400 rounded w-1/2"></div>
@@ -88,15 +156,39 @@ function GeneratingStep({ onComplete }) {
         </div>
       </div>
 
-      {/* Teks Status Generating */}
-      <div className="text-center mt-7">
-        <h2 className="text-[25px] font-bold text-white tracking-tight">
-          Generating{dots}
-        </h2>
-        <p className="text-[13px] text-white/80 font-normal mt-1.5 tracking-wide">
-          Mohon menunggu respon
-        </p>
-      </div>
+      {/* Teks Status Generating / Error */}
+      {status === "loading" ? (
+        <div className="text-center mt-7">
+          <h2 className="text-[25px] font-bold text-white tracking-tight">
+            Generating{dots}
+          </h2>
+          <p className="text-[13px] text-white/80 font-normal mt-1.5 tracking-wide">
+            Mohon menunggu respon
+          </p>
+        </div>
+      ) : (
+        <div className="text-center mt-6 max-w-sm px-4">
+          <p className="text-amber-200 font-semibold text-sm leading-relaxed">
+            {errorMessage || "Gagal memuat rekomendasi jurusan dari server."}
+          </p>
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+            <button
+              type="button"
+              onClick={runRecommendationFetch}
+              className="w-full sm:w-auto px-4 py-2 bg-[#0070E0] hover:bg-[#0060C5] text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
+            >
+              Coba Lagi
+            </button>
+            <button
+              type="button"
+              onClick={handleContinueWithDemo}
+              className="w-full sm:w-auto px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all cursor-pointer"
+            >
+              Lanjut dengan Data Demo
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

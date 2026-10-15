@@ -52,13 +52,26 @@ function PlatformNode({ id, data }) {
           preserveAspectRatio="none"
           className="w-full h-full block filter drop-shadow-[0_6px_10px_rgba(7,101,200,0.3)] transition-transform duration-150 group-hover:scale-105 group-active:scale-95"
         >
-          {/* Sisi Ketebalan Bawah Silinder (Warna #0765C8) */}
+          {/* Sisi Ketebalan Bawah Silinder */}
           <path
             d="M 0 30 L 0 38 A 50 30 0 0 0 100 38 L 100 30 Z"
-            fill="#0765C8"
+            fill={data?.color || "#0765C8"}
           />
-          {/* Permukaan Atas Elips Silinder (Warna #0970DD) */}
-          <ellipse cx="50" cy="30" rx="50" ry="30" fill="#0970DD" />
+          {data?.color && (
+            <path
+              d="M 0 30 L 0 38 A 50 30 0 0 0 100 38 L 100 30 Z"
+              fill="black"
+              opacity={0.25}
+            />
+          )}
+          {/* Permukaan Atas Elips Silinder */}
+          <ellipse
+            cx="50"
+            cy="30"
+            rx="50"
+            ry="30"
+            fill={data?.color || "#0970DD"}
+          />
         </svg>
       )}
 

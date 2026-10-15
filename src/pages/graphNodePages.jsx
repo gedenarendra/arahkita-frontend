@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GraphNodeComponent from "../components/graphNodeComponent";
 import MajorTestComponent from "../components/MajorTestComponent";
 import BottomNavigation from "../components/BottomNavigation";
 import logoArahkita from "../assets/Logo.png";
 import heroIllustration from "../assets/rafiki.svg";
+import { getCachedMajors } from "../api/majorApi";
 
 // Helper node platform 3D silinder isometrik dengan index animasi berurutan
 const platformNode = (w, h, label, index = 0) => ({
@@ -54,11 +55,43 @@ const initialNodes = [
 const initialEdges = [];
 
 function GraphNodePages({
+  nodes: propNodes,
   activeTab: controlledActiveTab,
   onTabChange,
 }) {
   const [internalActiveTab, setInternalActiveTab] = useState("home");
   const [selectedMajor, setSelectedMajor] = useState(null);
+  const [cachedNodes, setCachedNodes] = useState(null);
+
+  useEffect(() => {
+    if (Array.isArray(propNodes) && propNodes.length > 0) {
+      return;
+    }
+
+    let isMounted = true;
+    getCachedMajors().then((result) => {
+      if (isMounted && result?.mappedNodes && result.mappedNodes.length > 0) {
+        setCachedNodes(result.mappedNodes);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [propNodes]);
+
+  const hasOnboarded =
+    typeof window !== "undefined" &&
+    localStorage.getItem("has_onboarded") === "true";
+
+  const displayedNodes =
+    Array.isArray(propNodes) && propNodes.length > 0
+      ? propNodes
+      : cachedNodes && cachedNodes.length > 0
+      ? cachedNodes
+      : hasOnboarded
+      ? []
+      : initialNodes;
 
   const activeTab =
     controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
@@ -132,7 +165,7 @@ function GraphNodePages({
           {/* ── Graph Area ── */}
           <div className="flex-1 min-h-0">
             <GraphNodeComponent
-              nodes={initialNodes}
+              nodes={displayedNodes}
               edges={initialEdges}
               fitView
               fitViewOptions={{ padding: 0.25 }}

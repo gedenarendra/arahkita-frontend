@@ -200,7 +200,13 @@ function SplashPages({ onComplete }) {
                 interestErrorMessage={interestError}
               />
             )}
-            {currentStep === 5 && <GeneratingStep onComplete={onComplete} />}
+            {currentStep === 5 && (
+              <GeneratingStep
+                onComplete={onComplete}
+                selectedSubjects={selectedSubjects}
+                selectedInterests={selectedInterests}
+              />
+            )}
           </div>
 
           {/* Indikator Titik Terpusat (4 Titik: Step 1, 2, 3, 4) */}
