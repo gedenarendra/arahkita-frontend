@@ -79,12 +79,17 @@ function MajorTestComponent({
             .map((mc) => mc.minicase_number);
 
           if (doneLevels.length > 0) {
-            setCompletedLevels((prev) => [...new Set([...prev, 1, ...doneLevels])]);
-            setUnlockedLevel((prev) => Math.max(prev, Math.max(...doneLevels) + 1));
+            setCompletedLevels((prev) => [
+              ...new Set([...prev, 1, ...doneLevels]),
+            ]);
+            setUnlockedLevel((prev) =>
+              Math.max(prev, Math.max(...doneLevels) + 1),
+            );
           }
         } else {
           setErrorMessage(
-            res.error || "Gagal memuat studi kasus interaktif untuk jurusan ini."
+            res.error ||
+              "Gagal memuat studi kasus interaktif untuk jurusan ini.",
           );
         }
       })
@@ -116,7 +121,8 @@ function MajorTestComponent({
           setErrorMessage("");
         } else {
           setErrorMessage(
-            res.error || "Gagal memuat studi kasus interaktif untuk jurusan ini."
+            res.error ||
+              "Gagal memuat studi kasus interaktif untuk jurusan ini.",
           );
         }
       })
@@ -206,7 +212,7 @@ function MajorTestComponent({
 
   const checkAndTriggerCompletion = async (
     currentCompletedLevels,
-    { forceRefresh = false } = {}
+    { forceRefresh = false } = {},
   ) => {
     if (!allGeneratedNodes || allGeneratedNodes.length === 0) return;
 
@@ -225,7 +231,7 @@ function MajorTestComponent({
             major_name: major,
             circle_color: majorData.circle_color,
           },
-          { forceRefresh }
+          { forceRefresh },
         );
         if (res.success && res.data) {
           setPreviewResult(res.data);
@@ -245,8 +251,8 @@ function MajorTestComponent({
         prev?.map((mc) =>
           mc.id === rawMinicaseId
             ? { ...mc, is_done: true, user_answer: answer }
-            : mc
-        )
+            : mc,
+        ),
       );
     }
 
@@ -286,7 +292,8 @@ function MajorTestComponent({
       if (activeTestView.questionData?.type === "essay") {
         setIsSubmitting(true);
         const res = await evaluateEssayAnswer({
-          question: rawMinicase.question || activeTestView.questionData?.question,
+          question:
+            rawMinicase.question || activeTestView.questionData?.question,
           evaluation_hint: rawMinicase.evaluation_hint,
           user_answer: submitData?.answer,
           minicase_id: rawMinicase.id,
@@ -295,7 +302,8 @@ function MajorTestComponent({
 
         if (!res.success) {
           setTestErrorMessage(
-            res.error || "Gagal terhubung ke AI. Silakan periksa koneksi dan coba lagi."
+            res.error ||
+              "Gagal terhubung ke AI. Silakan periksa koneksi dan coba lagi.",
           );
           return;
         }
@@ -311,14 +319,22 @@ function MajorTestComponent({
           return;
         }
 
-        finalizeQuestionSubmission(currentLvl, rawMinicase.id, submitData?.answer);
+        finalizeQuestionSubmission(
+          currentLvl,
+          rawMinicase.id,
+          submitData?.answer,
+        );
       } else {
         await minicaseRepository.submitMultipleChoiceAnswer(
           rawMinicase.id,
           submitData?.answer,
-          rawMinicase.correct_answer
+          rawMinicase.correct_answer,
         );
-        finalizeQuestionSubmission(currentLvl, rawMinicase.id, submitData?.answer);
+        finalizeQuestionSubmission(
+          currentLvl,
+          rawMinicase.id,
+          submitData?.answer,
+        );
       }
     } else {
       finalizeQuestionSubmission(currentLvl, null, submitData?.answer);
@@ -442,7 +458,7 @@ function MajorTestComponent({
           Latihan test
         </h3>
         <span className="text-xs font-semibold text-gray-950 px-2.5 py-0.5 rounded-full">
-          Level {unlockedLevel}/{allGeneratedNodes.length} Terbuka
+          Level {unlockedLevel - 1}/{allGeneratedNodes.length} Terbuka
         </span>
       </div>
 
@@ -455,10 +471,13 @@ function MajorTestComponent({
               Menyiapkan studi kasus interaktif...
             </h2>
             <p className="text-gray-500 text-xs mt-1.5 max-w-xs leading-relaxed">
-              AI sedang merancang soal studi kasus aplikatif & reflektif untuk jurusan {major}.
+              AI sedang merancang soal studi kasus aplikatif & reflektif untuk
+              jurusan {major}.
             </p>
           </div>
-        ) : errorMessage && !useFallbackMock && (!minicases || minicases.length === 0) ? (
+        ) : errorMessage &&
+          !useFallbackMock &&
+          (!minicases || minicases.length === 0) ? (
           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center select-none bg-white max-w-sm mx-auto">
             <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold mb-3">
               !
@@ -539,7 +558,8 @@ function MajorTestComponent({
                   Menganalisis Hasil Trial...
                 </h3>
                 <p className="text-xs text-gray-500 mt-2 max-w-xs leading-relaxed">
-                  AI sedang menyusun evaluasi kecocokan keminatan dan jalur karir potensial untuk jurusan {major}.
+                  AI sedang menyusun evaluasi kecocokan keminatan dan jalur
+                  karir potensial untuk jurusan {major}.
                 </p>
               </div>
             ) : previewResult ? (
@@ -552,7 +572,10 @@ function MajorTestComponent({
                   Trial Selesai!
                 </h2>
                 <p className="text-xs text-gray-500 mb-4">
-                  Jurusan <strong className="text-gray-900 font-semibold">{major}</strong>
+                  Jurusan{" "}
+                  <strong className="text-gray-900 font-semibold">
+                    {major}
+                  </strong>
                 </p>
 
                 {/* Kartu Skor Kecocokan */}
@@ -646,7 +669,8 @@ function MajorTestComponent({
                   Gagal Memuat Hasil Evaluasi
                 </h3>
                 <p className="text-xs text-gray-500 mb-4 leading-relaxed max-w-xs">
-                  Terjadi kendala saat menyusun preview dari server. Pastikan koneksi internet stabil.
+                  Terjadi kendala saat menyusun preview dari server. Pastikan
+                  koneksi internet stabil.
                 </p>
                 <button
                   type="button"
@@ -676,7 +700,9 @@ function MajorTestComponent({
               Jawaban Belum Relevan
             </h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-6">
-              Jawabanmu belum sesuai dengan skenario studi kasus. Yuk, coba ceritakan solusimu agar minat dan potensi analisismu terpetakan lebih akurat!
+              Jawabanmu belum sesuai dengan skenario studi kasus. Yuk, coba
+              ceritakan solusimu agar minat dan potensi analisismu terpetakan
+              lebih akurat!
             </p>
             <div className="w-full flex flex-col gap-2">
               <button
