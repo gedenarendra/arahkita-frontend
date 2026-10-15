@@ -1,8 +1,32 @@
 import { useState } from "react";
-import logoArahkita from "../assets/Logo.svg";
+import logoArahkita from "../assets/Logo.png";
+import BottomNavigation from "../components/BottomNavigation";
+import {
+  RecommendationNavIcon,
+  HomeNavIcon,
+  ProfileNavIcon,
+} from "../components/NavigationIcons";
 
-function DashboardPages() {
-  const [activeTab, setActiveTab] = useState("home");
+function DashboardPages({
+  onNavigateHome,
+  onNavigateRecomendation,
+  onNavigateProfile,
+  activeTab: controlledActiveTab,
+  onTabChange,
+}) {
+  const [internalActiveTab, setInternalActiveTab] = useState("home");
+  const activeTab =
+    controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
+
+  const handleTabClick = (tab) => {
+    if (onTabChange) onTabChange(tab);
+    setInternalActiveTab(tab);
+
+    if (tab === "home" && onNavigateHome) onNavigateHome();
+    if (tab === "recomendation" && onNavigateRecomendation)
+      onNavigateRecomendation();
+    if (tab === "profile" && onNavigateProfile) onNavigateProfile();
+  };
 
   return (
     <div className="min-h-dvh w-full bg-white flex flex-col items-center overflow-x-hidden font-sans">
@@ -28,74 +52,50 @@ function DashboardPages() {
 
           {/* Desktop Navigation (Muncul khusus di Laptop/Tablet agar layout lebih optimal) */}
           <nav className="hidden md:flex items-center gap-2 bg-[#eaeaea] p-1.5 rounded-2xl">
+            {/* 1. Recomendation */}
             <button
-              onClick={() => setActiveTab("home")}
+              onClick={() => handleTabClick("recomendation")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === "home"
-                  ? "bg-white text-black shadow-xs"
-                  : "text-gray-600 hover:text-black"
+                activeTab === "recomendation"
+                  ? "bg-white text-[#1d154a] shadow-xs"
+                  : "text-gray-600 hover:text-[#1d154a]"
               }`}
             >
-              <svg
+              <RecommendationNavIcon
                 className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 10.5L12 3l9 7.5" />
-                <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-                <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-              </svg>
+                cutoutColor={
+                  activeTab === "recomendation" ? "#ffffff" : "#eaeaea"
+                }
+              />
+              <span>Rekomendasi</span>
+            </button>
+
+            {/* 2. Home */}
+            <button
+              onClick={() => handleTabClick("home")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                activeTab === "home"
+                  ? "bg-white text-[#1d154a] shadow-xs"
+                  : "text-gray-600 hover:text-[#1d154a]"
+              }`}
+            >
+              <HomeNavIcon
+                className="w-5 h-5"
+                cutoutColor={activeTab === "home" ? "#ffffff" : "#eaeaea"}
+              />
               <span>Beranda</span>
             </button>
 
+            {/* 3. Profile */}
             <button
-              onClick={() => setActiveTab("explore")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === "explore"
-                  ? "bg-white text-black shadow-xs"
-                  : "text-gray-600 hover:text-black"
-              }`}
-            >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 10.5L12 3l9 7.5" />
-                <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-                <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-              </svg>
-              <span>Eksplorasi</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("profile")}
+              onClick={() => handleTabClick("profile")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "profile"
-                  ? "bg-white text-black shadow-xs"
-                  : "text-gray-600 hover:text-black"
+                  ? "bg-white text-[#1d154a] shadow-xs"
+                  : "text-gray-600 hover:text-[#1d154a]"
               }`}
             >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="7" r="4" />
-                <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-              </svg>
+              <ProfileNavIcon className="w-5 h-5" />
               <span>Profil</span>
             </button>
           </nav>
@@ -135,84 +135,14 @@ function DashboardPages() {
 
       {/* 
         Floating Bottom Navigation:
-        - Khusus di layar HP (< md): Muncul persis sesuai gambar (floating bar abu-abu di bawah).
+        - Khusus di layar HP (< md): Menggunakan komponen terpadu BottomNavigation (variant="floating").
         - Di layar Laptop (md:): Disembunyikan (md:hidden) karena navigasi sudah berpindah ke Top Navbar secara ergonomis.
       */}
-      <nav
-        className="fixed bottom-7 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-87 h-16.5 bg-[#d9d9d9] rounded-[22px] flex items-center justify-around shadow-nav z-50 px-2 md:hidden"
-        aria-label="Bottom Navigation"
-      >
-        <button
-          onClick={() => setActiveTab("home")}
-          className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-            activeTab === "home"
-              ? "text-black scale-110"
-              : "text-gray-800 hover:text-black"
-          }`}
-          aria-label="Home"
-        >
-          <svg
-            className="w-7 h-7"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-            <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-          </svg>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("explore")}
-          className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-            activeTab === "explore"
-              ? "text-black scale-110"
-              : "text-gray-800 hover:text-black"
-          }`}
-          aria-label="Explore"
-        >
-          <svg
-            className="w-7 h-7"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-            <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-          </svg>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-            activeTab === "profile"
-              ? "text-black scale-110"
-              : "text-gray-800 hover:text-black"
-          }`}
-          aria-label="Profile"
-        >
-          <svg
-            className="w-7 h-7"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
-        </button>
-      </nav>
+      <BottomNavigation
+        variant="floating"
+        activeTab={activeTab}
+        onTabChange={handleTabClick}
+      />
     </div>
   );
 }

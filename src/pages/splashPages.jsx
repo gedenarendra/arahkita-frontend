@@ -1,25 +1,24 @@
 import { useState } from "react";
-import logoArahkita from "../assets/Logo.svg";
+import logoArahkita from "../assets/Logo.png";
 import WelcomeStep from "../components/splash/WelcomeStep";
 import InterestStep from "../components/splash/InterestStep";
 import GradesStep from "../components/splash/GradesStep";
 import GeneratingStep from "../components/splash/GeneratingStep";
 
 function SplashPages({ onComplete }) {
-  // Step 1: Welcome | Step 2: Interest Intro | Step 3: Grades & Minat (Grades: Cari & Nilai, Interest: Bubble & List) | Step 4: Generating
+  // Step 1: Welcome | Step 2: Interest Intro | Step 3: Grades | Step 4: Interest Minat | Step 5: Generating
   const [currentStep, setCurrentStep] = useState(1);
   const [gradesSubStep, setGradesSubStep] = useState(1); // 1: Cari Mata Pelajaran, 2: Isi Nilai
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [gradesError, setGradesError] = useState("");
 
-  const [step3View, setStep3View] = useState("grades"); // "grades" | "interest"
   const [interestSubStep, setInterestSubStep] = useState(1); // 1: Bubble / Plus, 2: Masukan Sini & List
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [interestError, setInterestError] = useState("");
 
   const handleNext = () => {
-    // Jika di Step 3 fase grades
-    if (currentStep === 3 && step3View === "grades") {
+    // Jika di Step 3 (Grades)
+    if (currentStep === 3) {
       if (gradesSubStep === 1) {
         if (selectedSubjects.length === 0) {
           setGradesError(
@@ -32,50 +31,58 @@ function SplashPages({ onComplete }) {
         return;
       }
       if (gradesSubStep === 2) {
-        // Lanjut ke tampilan Minat (Interest) pada Step 3
         setGradesError("");
-        setStep3View("interest");
+        setCurrentStep(4);
         return;
       }
     }
 
-    // Jika di Step 3 fase interest
-    if (currentStep === 3 && step3View === "interest") {
+    // Jika di Step 4 (Interest)
+    if (currentStep === 4) {
       if (interestSubStep === 1) {
         setInterestSubStep(2);
         return;
       }
       if (interestSubStep === 2) {
         if (selectedInterests.length === 0) {
-          setInterestError("Silakan tambahkan minimal satu minat terlebih dahulu.");
+          setInterestError(
+            "Silakan tambahkan minimal satu minat terlebih dahulu.",
+          );
           return;
         }
         setInterestError("");
-        setCurrentStep(4);
+        setCurrentStep(5);
         return;
       }
     }
 
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handleBack = () => {
-    // Navigasi mundur di Step 3
-    if (currentStep === 3) {
-      if (step3View === "interest") {
-        if (interestSubStep === 2) {
-          setInterestSubStep(1);
-          return;
-        }
-        // Kembali dari Interest ke Grades fase 2
-        setStep3View("grades");
+    // Navigasi mundur di Step 4 (Interest)
+    if (currentStep === 4) {
+      if (interestSubStep === 2) {
+        setInterestSubStep(1);
+        return;
+      }
+      if (interestSubStep === 1) {
+        setCurrentStep(3);
         setGradesSubStep(2);
         return;
       }
-      if (step3View === "grades" && gradesSubStep === 2) {
+    }
+
+    // Navigasi mundur di Step 3 (Grades)
+    if (currentStep === 3) {
+      if (gradesSubStep === 2) {
         setGradesSubStep(1);
+        return;
+      }
+      if (gradesSubStep === 1) {
+        setCurrentStep(2);
         return;
       }
     }
@@ -91,7 +98,7 @@ function SplashPages({ onComplete }) {
         currentStep === 1 ? "bg-[#0C3C6F]" : "bg-white"
       }`}
     >
-      {/* ── 1. Header Putih Atas (Hanya tampil di Slide 2, 3, 4 dengan Logo Arahkita) ── */}
+      {/* ── 1. Header Putih Atas (Hanya tampil di Slide 2, 3, 4, 5 dengan Logo Arahkita) ── */}
       {currentStep > 1 && (
         <header className="shrink-0 h-20 sm:h-23.75 w-full flex items-end justify-end px-6 sm:px-12 md:px-20 lg:px-28 pb-3 bg-white z-10">
           <div className="flex items-center">
@@ -113,7 +120,7 @@ function SplashPages({ onComplete }) {
           currentStep === 1 ? "bg-[#0C3C6F]" : ""
         }`}
       >
-        {/* Lengkungan Kubah Atas (Hanya tampil di Slide 2, 3, 4) */}
+        {/* Lengkungan Kubah Atas (Hanya tampil di Slide 2, 3, 4, 5) */}
         {currentStep > 1 && (
           <div className="w-full overflow-hidden leading-none -mb-px shrink-0 bg-white">
             <svg
@@ -141,8 +148,7 @@ function SplashPages({ onComplete }) {
             {currentStep === 2 && <InterestStep />}
             {currentStep === 3 && (
               <GradesStep
-                view={step3View}
-                onViewChange={setStep3View}
+                view="grades"
                 subStep={gradesSubStep}
                 onSubStepChange={(step) => {
                   setGradesError("");
@@ -154,6 +160,11 @@ function SplashPages({ onComplete }) {
                   setSelectedSubjects(subs);
                 }}
                 errorMessage={gradesError}
+              />
+            )}
+            {currentStep === 4 && (
+              <GradesStep
+                view="interest"
                 interestSubStep={interestSubStep}
                 onInterestSubStepChange={(step) => {
                   setInterestError("");
@@ -167,11 +178,11 @@ function SplashPages({ onComplete }) {
                 interestErrorMessage={interestError}
               />
             )}
-            {currentStep === 4 && <GeneratingStep onComplete={onComplete} />}
+            {currentStep === 5 && <GeneratingStep onComplete={onComplete} />}
           </div>
 
-          {/* Indikator Titik Terpusat (Posisi 100% Identik & Sama di Semua Step) */}
-          {currentStep < 4 && (
+          {/* Indikator Titik Terpusat (4 Titik: Step 1, 2, 3, 4) */}
+          {currentStep < 5 && (
             <div className="flex items-center justify-center gap-2.5 pb-2.5 shrink-0 z-10">
               <span
                 className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
@@ -188,12 +199,17 @@ function SplashPages({ onComplete }) {
                   currentStep === 3 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
                 }`}
               />
+              <span
+                className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 4 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
+                }`}
+              />
             </div>
           )}
         </div>
 
-        {/* Gelombang Asimetris Bawah (Slide 2, 3) / Spacer Biru (Slide 1 agar posisi dots 100% identik) */}
-        {currentStep > 1 && currentStep < 4 ? (
+        {/* Gelombang Asimetris Bawah (Slide 2, 3, 4) / Spacer Biru (Slide 1 agar posisi dots 100% identik) */}
+        {currentStep > 1 && currentStep < 5 ? (
           <div className="w-full overflow-hidden leading-none -mt-px shrink-0 bg-white">
             <svg
               viewBox="0 0 1000 100"
@@ -218,8 +234,8 @@ function SplashPages({ onComplete }) {
         ) : null}
       </div>
 
-      {/* ── 3. Area Tombol Navigasi Bawah (Hanya Slide 1, 2, 3) ── */}
-      {currentStep < 4 && (
+      {/* ── 3. Area Tombol Navigasi Bawah (Hanya Slide 1, 2, 3, 4) ── */}
+      {currentStep < 5 && (
         <div
           className={`shrink-0 w-full px-6 sm:px-12 md:px-20 lg:px-28 flex items-center z-10 pt-2.5 sm:pt-4 pb-9 sm:pb-12 ${
             currentStep === 1

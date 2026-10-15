@@ -11,8 +11,12 @@ export default defineConfig({
 
     VitePWA({
       registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+      },
       includeAssets: [
-        "favicon.svg",
+        "Logo.png",
+        "favicon.png",
         "apple-touch-icon.png",
         "pwa-192x192.png",
         "pwa-512x512.png",
@@ -21,13 +25,18 @@ export default defineConfig({
         name: "ArahKita",
         short_name: "ArahKita",
         description: "ArahKita Application",
-        theme_color: "#863bff",
+        theme_color: "#0070E0",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
         start_url: "/",
         icons: [
+          {
+            src: "/Logo.png",
+            sizes: "131x148",
+            type: "image/png",
+          },
           {
             src: "/pwa-192x192.png",
             sizes: "192x192",

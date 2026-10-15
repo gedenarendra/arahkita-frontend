@@ -4,7 +4,6 @@ import InterestComponent from "./InterestComponent";
 
 function GradesStep({
   view, // "grades" | "interest" (jika dikontrol oleh parent)
-  onViewChange,
   // Props untuk Grades
   subStep = 1,
   onSubStepChange,
@@ -19,9 +18,8 @@ function GradesStep({
   interestErrorMessage = "",
 }) {
   // Local fallback jika view tidak dikontrol parent
-  const [localView, setLocalView] = useState("grades");
+  const [localView] = useState("grades");
   const activeView = view !== undefined ? view : localView;
-  const changeView = onViewChange || setLocalView;
 
   return (
     <div className="w-full h-full flex flex-col justify-between">

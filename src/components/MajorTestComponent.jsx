@@ -1,266 +1,21 @@
 import { useState } from "react";
 import GraphNodeComponent from "./graphNodeComponent";
 import TestPages from "../pages/testPages";
-import logoArahkita from "../assets/Logo.svg";
+import logoArahkita from "../assets/Logo.png";
 import mathIllustration from "../assets/math_illustration.png";
-
-// Definisi node latihan level 1-8 dengan posisi acak organik meliuk bebas tapi tetap rapi & terurut ke bawah
-const allTestNodes = [
-  // Level 1: Kiri (Syarat & Ketentuan)
-  {
-    id: "test-1",
-    type: "platform",
-    data: { label: "1", level: 1, hasStar: true },
-    position: { x: 55, y: 20 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-  // Level 2: Tengah Kanan (Soal Pilihan Ganda)
-  {
-    id: "test-2",
-    type: "platform",
-    data: {
-      label: "2",
-      level: 2,
-      questionData: {
-        type: "multiple",
-        title: "Math Question",
-        question: "Manakah dari angka berikut yang merupakan bilangan prima?",
-        subtext:
-          "Silakan pilih semua opsi yang benar, Anda bisa mengubah jawaban ini nanti sebelum dikumpulkan.",
-        options: [
-          {
-            id: 0,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 1,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 2,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 3,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-        ],
-      },
-    },
-    position: { x: 195, y: 115 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-  // Level 3: Kanan Jauh (Soal Essay)
-  {
-    id: "test-3",
-    type: "platform",
-    data: {
-      label: "3",
-      level: 3,
-      questionData: {
-        type: "essay",
-        title: "Math Question",
-        question: "Manakah dari angka berikut yang merupakan bilangan prima?",
-        subtext:
-          "Silakan pilih semua opsi yang benar, Anda bisa mengubah jawaban ini nanti sebelum dikumpulkan.",
-      },
-    },
-    position: { x: 250, y: 210 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-  // Level 4: Tepat di Tengah (Soal Pilihan Ganda)
-  {
-    id: "test-4",
-    type: "platform",
-    data: {
-      label: "4",
-      level: 4,
-      questionData: {
-        type: "multiple",
-        title: "Math Question",
-        question: "Manakah dari angka berikut yang merupakan bilangan prima?",
-        subtext:
-          "Silakan pilih semua opsi yang benar, Anda bisa mengubah jawaban ini nanti sebelum dikumpulkan.",
-        options: [
-          {
-            id: 0,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 1,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 2,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 3,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-        ],
-      },
-    },
-    position: { x: 145, y: 310 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-  // Level 5: Kiri Jauh (Soal Essay)
-  {
-    id: "test-5",
-    type: "platform",
-    data: {
-      label: "5",
-      level: 5,
-      questionData: {
-        type: "essay",
-        title: "Math Question",
-        question: "Manakah dari angka berikut yang merupakan bilangan prima?",
-        subtext:
-          "Silakan pilih semua opsi yang benar, Anda bisa mengubah jawaban ini nanti sebelum dikumpulkan.",
-      },
-    },
-    position: { x: 40, y: 410 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-  // Level 6: Tengah Kiri (Soal Pilihan Ganda)
-  {
-    id: "test-6",
-    type: "platform",
-    data: {
-      label: "6",
-      level: 6,
-      questionData: {
-        type: "multiple",
-        title: "Math Question",
-        question: "Manakah dari angka berikut yang merupakan bilangan prima?",
-        subtext:
-          "Silakan pilih semua opsi yang benar, Anda bisa mengubah jawaban ini nanti sebelum dikumpulkan.",
-        options: [
-          {
-            id: 0,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 1,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 2,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-          {
-            id: 3,
-            title: "Angka 2",
-            description: "Satu-satunya bilangan prima yang bernilai genap.",
-          },
-        ],
-      },
-    },
-    position: { x: 95, y: 510 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-  // Level 7: Kanan (Soal Essay)
-  {
-    id: "test-7",
-    type: "platform",
-    data: {
-      label: "7",
-      level: 7,
-      questionData: {
-        type: "essay",
-        title: "Math Question",
-        question: "Manakah dari angka berikut yang merupakan bilangan prima?",
-        subtext:
-          "Silakan pilih semua opsi yang benar, Anda bisa mengubah jawaban ini nanti sebelum dikumpulkan.",
-      },
-    },
-    position: { x: 235, y: 610 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-  // Level 8: Tengah (Soal Essay)
-  {
-    id: "test-8",
-    type: "platform",
-    data: {
-      label: "8",
-      level: 8,
-      questionData: {
-        type: "essay",
-        title: "Math Question",
-        question: "Manakah dari angka berikut yang merupakan bilangan prima?",
-        subtext:
-          "Silakan pilih semua opsi yang benar, Anda bisa mengubah jawaban ini nanti sebelum dikumpulkan.",
-      },
-    },
-    position: { x: 150, y: 710 },
-    style: {
-      width: 100,
-      height: 68,
-      background: "transparent",
-      border: "none",
-      padding: 0,
-    },
-  },
-];
+import {
+  POSITION_TEMPLATES,
+  generateNodesList,
+} from "../utils/testNodeUtils";
 
 function MajorTestComponent({
   major = "Math",
   onBack,
-  activeTab = "home",
-  setActiveTab = () => {},
+  // Props Dinamis untuk kebutuhan BE:
+  nodesData = null, // Data array nodes dari BE
+  totalNodes = 8, // Jumlah nodes yang akan ditampilkan (jika nodesData null)
+  positionTemplate = POSITION_TEMPLATES.ZIGZAG_LEFT, // 'vertical' | 'zigzag-left' | 'zigzag-right'
+  hiddens = null, // Props hiddens: array of id/level yg disembunyikan, angka limit, atau boolean
 }) {
   // Awalnya yang tampil adalah No. 1 (Syarat & Ketentuan) dan No. 2 (Soal Pertama)
   const [unlockedLevel, setUnlockedLevel] = useState(2);
@@ -269,9 +24,45 @@ function MajorTestComponent({
   // State untuk merender TestPages: null | { mode: 'terms' | 'question', level: number, questionData: object }
   const [activeTestView, setActiveTestView] = useState(null);
 
-  // Filter node yang sedang terbuka (unlocked)
-  const visibleNodes = allTestNodes
-    .filter((node) => node.data.level <= unlockedLevel)
+  // Buat seluruh node dinamis berdasarkan template posisi & jumlah/data
+  const allGeneratedNodes = generateNodesList({
+    nodesData,
+    totalCount: totalNodes,
+    template: positionTemplate,
+    major,
+  });
+
+  // Logika penyembunyian node menggunakan props `hiddens`:
+  // - Jika hiddens berupa Array: sembunyikan node yang ID atau level-nya ada di array
+  // - Jika hiddens berupa Number: tampilkan hanya sebanyak `hiddens` node (sembunyikan index >= hiddens)
+  // - Jika hiddens berupa Boolean: jika true maka sembunyikan semua yang belum unlocked
+  // - Jika hiddens null / undefined: default menyembunyikan yang belum unlocked (level > unlockedLevel)
+  const isNodeHidden = (node, index) => {
+    if (hiddens === null || hiddens === undefined) {
+      return node.data.level > unlockedLevel;
+    }
+    if (Array.isArray(hiddens)) {
+      return (
+        hiddens.includes(node.id) ||
+        hiddens.includes(node.data?.level) ||
+        hiddens.includes(String(node.data?.level))
+      );
+    }
+    if (typeof hiddens === "number") {
+      return index >= hiddens;
+    }
+    if (typeof hiddens === "boolean") {
+      return hiddens ? node.data.level > unlockedLevel : false;
+    }
+    if (typeof hiddens === "function") {
+      return hiddens(node, index);
+    }
+    return false;
+  };
+
+  // Filter node yang tampil (tidak di-hidden) dan tambahkan status interaktif
+  const visibleNodes = allGeneratedNodes
+    .filter((node, index) => !isNodeHidden(node, index))
     .map((node) => ({
       ...node,
       data: {
@@ -313,6 +104,10 @@ function MajorTestComponent({
         level={activeTestView.level}
         questionData={activeTestView.questionData}
         major={major}
+        currentQuestion={
+          activeTestView.level > 1 ? activeTestView.level - 1 : 1
+        }
+        totalQuestions={Math.max(1, allGeneratedNodes.length - 1)}
         onBack={() => setActiveTestView(null)}
         onAgreeTerms={() => {
           if (!completedLevels.includes(1)) {
@@ -329,21 +124,19 @@ function MajorTestComponent({
           if (
             currentLvl >= 2 &&
             currentLvl === unlockedLevel &&
-            unlockedLevel < allTestNodes.length
+            unlockedLevel < allGeneratedNodes.length
           ) {
             const nextLvl = unlockedLevel + 1;
             setUnlockedLevel(nextLvl);
           }
           setActiveTestView(null);
         }}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
       />
     );
   }
 
   return (
-    <div className="w-full h-dvh flex flex-col bg-white font-sans overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-white font-sans overflow-hidden">
       {/* ── 1. Header (Tombol Back Bulat & Logo Arahkita) ── */}
       <header className="shrink-0 flex items-center justify-between px-5 pt-8 pb-3">
         {/* Tombol Back Bulat Abu-abu */}
@@ -406,7 +199,7 @@ function MajorTestComponent({
           Latihan test
         </h3>
         <span className="text-xs font-semibold text-gray-950 px-2.5 py-0.5 rounded-full">
-          Level {unlockedLevel}/{allTestNodes.length} Terbuka
+          Level {unlockedLevel}/{allGeneratedNodes.length} Terbuka
         </span>
       </div>
 
@@ -431,10 +224,10 @@ function MajorTestComponent({
           nodesFocusable={false}
           elementsSelectable={false}
           onNodeClick={handleNodeClick}
-          // Batasi scroll vertikal sesuai jumlah node yang telah terbuka
+          // Batasi scroll vertikal sesuai jumlah node yang tampil
           translateExtent={[
             [-20, -10],
-            [420, Math.max(450, unlockedLevel * 105)],
+            [420, Math.max(450, visibleNodes.length * 110)],
           ]}
           // Background dot grid abu-abu
           backgroundProps={{
@@ -444,82 +237,6 @@ function MajorTestComponent({
             size: 3,
           }}
         />
-      </div>
-
-      {/* ── 5. Bottom Navigation (Identik dengan Halaman Utama) ── */}
-      <div className="shrink-0 px-6 pb-6 pt-2">
-        <nav className="w-full h-16 bg-[#d9d9d9] rounded-[22px] flex items-center justify-around shadow-nav px-2">
-          {/* Beranda */}
-          <button
-            onClick={() => {
-              setActiveTab("home");
-              onBack(); // Klik beranda kembali ke graf utama
-            }}
-            className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-              activeTab === "home" ? "text-black scale-110" : "text-gray-700"
-            }`}
-            aria-label="Beranda"
-          >
-            <svg
-              className="w-7 h-7"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 10.5L12 3l9 7.5" />
-              <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-              <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-            </svg>
-          </button>
-
-          {/* Eksplorasi */}
-          <button
-            onClick={() => setActiveTab("explore")}
-            className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-              activeTab === "explore" ? "text-black scale-110" : "text-gray-700"
-            }`}
-            aria-label="Eksplorasi"
-          >
-            <svg
-              className="w-7 h-7"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 10.5L12 3l9 7.5" />
-              <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-              <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-            </svg>
-          </button>
-
-          {/* Profil */}
-          <button
-            onClick={() => setActiveTab("profile")}
-            className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-              activeTab === "profile" ? "text-black scale-110" : "text-gray-700"
-            }`}
-            aria-label="Profil"
-          >
-            <svg
-              className="w-7 h-7"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="7" r="4" />
-              <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-            </svg>
-          </button>
-        </nav>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import logoArahkita from "../../assets/Logo.svg";
+import logoArahkita from "../../assets/Logo.png";
 
 function WelcomeStep() {
   return (

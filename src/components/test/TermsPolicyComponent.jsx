@@ -1,15 +1,13 @@
-import logoArahkita from "../../assets/Logo.svg";
+import logoArahkita from "../../assets/Logo.png";
 import termsHeroImg from "../../assets/terms_hero.png";
 
 function TermsPolicyComponent({
   onBack,
   onAgree,
   onDisagree,
-  activeTab = "home",
-  setActiveTab = () => {},
 }) {
   return (
-    <div className="w-full h-dvh flex flex-col bg-white font-sans overflow-hidden select-none">
+    <div className="w-full h-full flex flex-col bg-white font-sans overflow-hidden select-none">
       {/* ── 1. Header (Tombol Back Bulat & Logo Arahkita) ── */}
       <header className="shrink-0 flex items-center justify-between px-5 sm:px-8 pt-7 pb-2.5 max-w-sm mx-auto w-full">
         <button
@@ -120,7 +118,7 @@ function TermsPolicyComponent({
       </div>
 
       {/* ── 4. Tombol Aksi (Disagree & Agree Sesuai Warna & Ukuran Mockup) ── */}
-      <div className="shrink-0 max-w-sm mx-auto w-full px-5 sm:px-8 pt-3 pb-2 flex items-center justify-between">
+      <div className="shrink-0 max-w-sm mx-auto w-full px-5 sm:px-8 py-2 flex items-center justify-between">
         <button
           type="button"
           onClick={onDisagree}
@@ -135,79 +133,6 @@ function TermsPolicyComponent({
         >
           Agree
         </button>
-      </div>
-
-      {/* ── 5. Bottom Navigation Bar ── */}
-      <div className="shrink-0 max-w-sm mx-auto w-full px-5 sm:px-8 pb-5 pt-1">
-        <nav className="w-full h-16 bg-[#d9d9d9] rounded-[22px] flex items-center justify-around shadow-nav px-2">
-          <button
-            onClick={() => {
-              setActiveTab("home");
-              onBack();
-            }}
-            className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-              activeTab === "home" ? "text-black scale-110" : "text-gray-700"
-            }`}
-            aria-label="Beranda"
-          >
-            <svg
-              className="w-7 h-7"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 10.5L12 3l9 7.5" />
-              <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-              <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-            </svg>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("explore")}
-            className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-              activeTab === "explore" ? "text-black scale-110" : "text-gray-700"
-            }`}
-            aria-label="Eksplorasi"
-          >
-            <svg
-              className="w-7 h-7"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 10.5L12 3l9 7.5" />
-              <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
-              <path d="M9.5 21v-7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v7" />
-            </svg>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("profile")}
-            className={`p-2.5 transition-transform duration-150 rounded-xl cursor-pointer ${
-              activeTab === "profile" ? "text-black scale-110" : "text-gray-700"
-            }`}
-            aria-label="Profil"
-          >
-            <svg
-              className="w-7 h-7"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="7" r="4" />
-              <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-            </svg>
-          </button>
-        </nav>
       </div>
     </div>
   );
