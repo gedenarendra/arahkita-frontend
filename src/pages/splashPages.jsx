@@ -4,6 +4,10 @@ import WelcomeStep from "../components/splash/WelcomeStep";
 import InterestStep from "../components/splash/InterestStep";
 import GradesStep from "../components/splash/GradesStep";
 import GeneratingStep from "../components/splash/GeneratingStep";
+import {
+  formatInterestsForBackend,
+  MAX_INTERESTS_COUNT,
+} from "../utils/interestUtils";
 
 function SplashPages({ onComplete }) {
   // Step 1: Welcome | Step 2: Interest Intro | Step 3: Grades | Step 4: Interest Minat | Step 5: Generating
@@ -50,7 +54,25 @@ function SplashPages({ onComplete }) {
           );
           return;
         }
+        if (selectedInterests.length > MAX_INTERESTS_COUNT) {
+          setInterestError(
+            `Maksimal hanya dapat memilih ${MAX_INTERESTS_COUNT} minat.`,
+          );
+          return;
+        }
         setInterestError("");
+
+        // Format data string yang wajib dikirim ke backend:
+        // Contoh: "bisnis dan keuangan, informatika"
+        const backendInterestsString = formatInterestsForBackend(
+          selectedInterests,
+          MAX_INTERESTS_COUNT,
+        );
+        console.log(
+          "Payload minat untuk backend (string):",
+          backendInterestsString,
+        );
+
         setCurrentStep(5);
         return;
       }

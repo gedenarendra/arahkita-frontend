@@ -16,6 +16,8 @@ function GradesStep({
   selectedInterests = [],
   setSelectedInterests,
   interestErrorMessage = "",
+  maxInterests = 5,
+  onBackendPayloadChange,
 }) {
   // Local fallback jika view tidak dikontrol parent
   const [localView] = useState("grades");
@@ -38,6 +40,8 @@ function GradesStep({
           selectedInterests={selectedInterests}
           setSelectedInterests={setSelectedInterests}
           errorMessage={interestErrorMessage}
+          maxInterests={maxInterests}
+          onBackendPayloadChange={onBackendPayloadChange}
         />
       )}
     </div>

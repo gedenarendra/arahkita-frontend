@@ -1,4 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import {
+  formatInterestsForBackend,
+  MAX_INTERESTS_COUNT,
+} from "../../utils/interestUtils";
 
 // ── SVG Ikon untuk 7 Gelembung Minat (Sesuai Gambar 1) ──
 
@@ -237,10 +241,12 @@ function InterestComponent({
   selectedInterests = [],
   setSelectedInterests,
   errorMessage = "",
+  maxInterests = MAX_INTERESTS_COUNT,
+  onBackendPayloadChange,
 }) {
   const [inputValue, setInputValue] = useState("");
-  // State awal kosong sesuai permintaan
   const [localInterests, setLocalInterests] = useState([]);
+  const [localError, setLocalError] = useState("");
 
   const inputRef = useRef(null);
 
@@ -254,13 +260,42 @@ function InterestComponent({
     }
   }, [subStep]);
 
+  // Sync string payload ke parent jika interests berubah
+  const notifyBackendPayload = (items) => {
+    if (onBackendPayloadChange) {
+      // Contoh hasil: "bisnis dan keuangan, informatika"
+      const payloadString = formatInterestsForBackend(items, maxInterests);
+      onBackendPayloadChange(payloadString);
+    }
+  };
+
   // Tambah minat saat gelembung dipilih
   const handleSelectBubble = (name) => {
+    setLocalError("");
+
+    // Aturan 1: Maksimal hanya bisa memilih 5 minat
+    if (interests.length >= maxInterests) {
+      setLocalError(`Maksimal hanya dapat memilih ${maxInterests} minat.`);
+      return;
+    }
+
+    // Hindari duplikasi minat yang sama
+    const alreadyExists = interests.some(
+      (item) => item.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (alreadyExists) {
+      setLocalError(`Minat "${name}" sudah ada dalam daftar.`);
+      return;
+    }
+
     const newItem = {
       instanceId: `interest-${Date.now()}-${Math.random()}`,
       name,
     };
-    updateInterests([...interests, newItem]);
+    const updated = [...interests, newItem];
+    updateInterests(updated);
+    notifyBackendPayload(updated);
+
     if (onSubStepChange) {
       onSubStepChange(2);
     }
@@ -269,22 +304,43 @@ function InterestComponent({
   // Tambah minat baru dari input
   const handleAddSubmit = (e) => {
     e.preventDefault();
+    setLocalError("");
     const cleanText = inputValue.trim();
     if (!cleanText) return;
+
+    // Aturan 1: Maksimal hanya bisa memilih 5 minat
+    if (interests.length >= maxInterests) {
+      setLocalError(`Maksimal hanya dapat memilih ${maxInterests} minat.`);
+      return;
+    }
+
+    // Hindari duplikasi
+    const alreadyExists = interests.some(
+      (item) => item.name.toLowerCase() === cleanText.toLowerCase(),
+    );
+    if (alreadyExists) {
+      setLocalError(`Minat "${cleanText}" sudah ada dalam daftar.`);
+      return;
+    }
 
     const newItem = {
       instanceId: `interest-${Date.now()}-${Math.random()}`,
       name: cleanText,
     };
 
-    updateInterests([...interests, newItem]);
+    const updated = [...interests, newItem];
+    updateInterests(updated);
+    notifyBackendPayload(updated);
     setInputValue("");
   };
 
   // Hapus minat berdasarkan id
   const handleRemoveInterest = (instanceId) => {
+    setLocalError("");
     const updated = interests.filter((item) => item.instanceId !== instanceId);
     updateInterests(updated);
+    notifyBackendPayload(updated);
+
     if (updated.length === 0 && subStep === 2 && onSubStepChange) {
       onSubStepChange(1);
     }
@@ -399,10 +455,17 @@ function InterestComponent({
             </button>
           </div>
 
+          {/* Indikator Jumlah Minat Terpilih */}
+          {interests.length > 0 && (
+            <div className="mt-3 text-xs text-white/90 font-semibold bg-white/10 px-3 py-1 rounded-full">
+              {interests.length}/{maxInterests} minat terpilih
+            </div>
+          )}
+
           {/* Pesan Kesalahan jika ada */}
-          {errorMessage && (
-            <p className="mt-3 text-amber-200 text-xs text-center font-medium px-4">
-              {errorMessage}
+          {(errorMessage || localError) && (
+            <p className="mt-2 text-amber-200 text-xs text-center font-medium px-4">
+              {errorMessage || localError}
             </p>
           )}
         </div>
@@ -411,25 +474,37 @@ function InterestComponent({
       {/* ── 2. Tampilan Input & Daftar Minat (Sesuai Gambar 2) ── */}
       {subStep === 2 && (
         <div className="mt-6 sm:mt-4 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
+          {/* Indikator Jumlah Minat */}
+          <div className="text-xs text-white/90 font-semibold mb-2 bg-white/10 px-3 py-1 rounded-full">
+            {interests.length}/{maxInterests} minat terpilih
+          </div>
+
           {/* Kotak Putih "masukan sini" */}
           <form
             onSubmit={handleAddSubmit}
-            className="w-full max-w-65 sm:max-w-72 h-12 sm:h-13 bg-white rounded-xl flex items-center justify-center px-4 shadow-sm"
+            className={`w-full max-w-65 sm:max-w-72 h-12 sm:h-13 bg-white rounded-xl flex items-center justify-center px-4 shadow-sm ${
+              interests.length >= maxInterests ? "opacity-75" : ""
+            }`}
           >
             <input
               ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="masukan sini"
-              className="w-full text-center font-bold text-sm sm:text-base text-gray-900 placeholder:text-gray-950 placeholder:font-bold outline-none bg-transparent"
+              disabled={interests.length >= maxInterests}
+              placeholder={
+                interests.length >= maxInterests
+                  ? "Maksimal 5 minat"
+                  : "masukan sini"
+              }
+              className="w-full text-center font-bold text-sm sm:text-base text-gray-900 placeholder:text-gray-950 placeholder:font-bold outline-none bg-transparent disabled:cursor-not-allowed"
             />
           </form>
 
           {/* Pesan Kesalahan jika ada */}
-          {errorMessage && (
+          {(errorMessage || localError) && (
             <p className="mt-2 text-amber-200 text-xs text-center font-medium px-4">
-              {errorMessage}
+              {errorMessage || localError}
             </p>
           )}
 
