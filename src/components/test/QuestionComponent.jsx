@@ -15,6 +15,8 @@ function QuestionComponent({
   currentQuestion,
   totalQuestions,
   progress,
+  isReadOnly = false,
+  isSubmitting = false,
   onBack,
   onSubmit,
 }) {
@@ -77,16 +79,21 @@ function QuestionComponent({
   const selectedOption =
     currentAnswer?.option !== undefined
       ? currentAnswer.option
-      : activeQuestion?.defaultSelected !== undefined
-        ? activeQuestion.defaultSelected
-        : 3;
+      : activeQuestion?.user_answer !== undefined
+        ? activeQuestion.user_answer
+        : activeQuestion?.defaultSelected !== undefined
+          ? activeQuestion.defaultSelected
+          : null;
 
   const essayAnswer =
     currentAnswer?.essay !== undefined
       ? currentAnswer.essay
-      : activeQuestion?.initialAnswer || "";
+      : activeQuestion?.user_answer !== undefined
+        ? String(activeQuestion.user_answer)
+        : activeQuestion?.initialAnswer || "";
 
   const handleSelectOption = (optId) => {
+    if (isReadOnly || isSubmitting) return;
     setAnswers((prev) => ({
       ...prev,
       [activeAnswerKey]: {
@@ -97,6 +104,7 @@ function QuestionComponent({
   };
 
   const handleEssayChange = (text) => {
+    if (isReadOnly || isSubmitting) return;
     setAnswers((prev) => ({
       ...prev,
       [activeAnswerKey]: {
@@ -115,6 +123,8 @@ function QuestionComponent({
   };
 
   const handleNextOrSubmit = () => {
+    if (isReadOnly || isSubmitting) return;
+
     if (
       hasMultipleQuestions &&
       internalQuestionIndex < questionsList.length - 1
@@ -139,7 +149,8 @@ function QuestionComponent({
         <button
           type="button"
           onClick={handleBackAction}
-          className="w-8.5 h-8.5 rounded-full bg-[#E0E0E0] hover:bg-[#D4D4D4] active:scale-90 flex items-center justify-center transition-all cursor-pointer shadow-xs text-white"
+          disabled={isSubmitting}
+          className="w-8.5 h-8.5 rounded-full bg-[#E0E0E0] hover:bg-[#D4D4D4] active:scale-90 flex items-center justify-center transition-all cursor-pointer shadow-xs text-white disabled:opacity-50"
           aria-label="Kembali"
         >
           <svg
@@ -174,9 +185,16 @@ function QuestionComponent({
             >
               {title}
             </h1>
-            <span className="text-xs font-semibold text-gray-500">
-              {current} / {total}
-            </span>
+            <div className="flex items-center gap-2">
+              {isReadOnly && (
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  ✓ Review Mode
+                </span>
+              )}
+              <span className="text-xs font-semibold text-gray-500">
+                {current} / {total}
+              </span>
+            </div>
           </div>
 
           {/* Progress Bar (Garis Biru & Abu-abu Aktif Menyesuaikan Jumlah Soal) */}
@@ -205,7 +223,7 @@ function QuestionComponent({
             <div className="space-y-3.5">
               {options.map((opt, idx) => {
                 const optId = opt.id !== undefined ? opt.id : idx;
-                const isSelected = selectedOption === optId;
+                const isSelected = selectedOption === optId || selectedOption === opt;
                 const displayText =
                   opt.text ||
                   opt.title ||
@@ -216,10 +234,15 @@ function QuestionComponent({
                     key={optId}
                     type="button"
                     onClick={() => handleSelectOption(optId)}
-                    className={`w-full min-h-14 py-3.5 px-4 rounded-xl flex items-center justify-center text-center transition-all cursor-pointer shadow-md select-none active:scale-[0.99] ${
-                      isSelected
-                        ? "bg-[#407BFF] text-white"
-                        : "bg-[#D9D9D9] text-[#1E1E1E] hover:bg-[#D0D0D4]"
+                    disabled={isReadOnly || isSubmitting}
+                    className={`w-full min-h-14 py-3.5 px-4 rounded-xl flex items-center justify-center text-center transition-all shadow-md select-none ${
+                      isReadOnly
+                        ? isSelected
+                          ? "bg-[#407BFF] text-white font-semibold ring-2 ring-blue-300 cursor-default"
+                          : "bg-[#EAEAEA] text-gray-400 opacity-70 cursor-default"
+                        : isSelected
+                          ? "bg-[#407BFF] text-white active:scale-[0.99] cursor-pointer"
+                          : "bg-[#D9D9D9] text-[#1E1E1E] hover:bg-[#D0D0D4] active:scale-[0.99] cursor-pointer"
                     }`}
                   >
                     <span className="text-xs sm:text-sm font-medium leading-snug">
@@ -237,46 +260,79 @@ function QuestionComponent({
               {/* Garis Pembatas Biru Tua Membentang Penuh Sesuai Gambar */}
               <div className="-mx-5 h-0.5 bg-[#0C3C6F] mt-7 mb-4" />
 
-              <h3
-                className="font-bold text-[#2C2C2C] text-base mb-3"
-                style={{ color: "#2C2C2C" }}
-              >
-                Your Answer
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3
+                  className="font-bold text-[#2C2C2C] text-base"
+                  style={{ color: "#2C2C2C" }}
+                >
+                  Your Answer
+                </h3>
+                {isReadOnly && (
+                  <span className="text-xs text-gray-500 font-medium">
+                    (Jawaban tersimpan)
+                  </span>
+                )}
+              </div>
 
               {/* Area Kotak Teks Abu-abu Solid Besar */}
               <textarea
                 value={essayAnswer}
                 onChange={(e) => handleEssayChange(e.target.value)}
-                placeholder=""
+                readOnly={isReadOnly || isSubmitting}
+                placeholder={isReadOnly ? "Tidak ada jawaban tertulis." : ""}
                 rows={7}
-                className="w-full bg-[#D9D9D9] rounded-xs p-4 h-48 sm:h-52 text-xs sm:text-sm text-gray-900 outline-none resize-none font-medium"
+                className={`w-full rounded-xs p-4 h-48 sm:h-52 text-xs sm:text-sm outline-none resize-none font-medium transition-all ${
+                  isReadOnly
+                    ? "bg-[#E6E6E6] text-gray-800 cursor-default border border-gray-300"
+                    : "bg-[#D9D9D9] text-gray-900 focus:ring-1 focus:ring-blue-500"
+                }`}
               />
             </div>
           )}
         </div>
       </div>
 
-      {/* ── 3. Tombol Aksi (Back & Submit Sesuai Gambar) ── */}
-      <div className="shrink-0 px-5 py-2 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleBackAction}
-          className="w-23 h-9 bg-[#E0E0E0] hover:bg-[#D4D4D4] active:scale-95 text-gray-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center"
-        >
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={handleNextOrSubmit}
-          className="w-23 h-9 bg-[#0970DD] hover:bg-[#0765C8] active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center"
-        >
-          {hasMultipleQuestions &&
-          internalQuestionIndex < questionsList.length - 1
-            ? "Next"
-            : "Submit"}
-        </button>
-      </div>
+      {/* ── 3. Tombol Aksi (Back & Submit Sesuai Gambar / Review Kembali) ── */}
+      {isReadOnly ? (
+        <div className="shrink-0 px-5 py-2 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={handleBackAction}
+            className="w-full sm:w-56 h-10 bg-[#0970DD] hover:bg-[#0765C8] active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center"
+          >
+            Kembali ke Pohon Jurusan
+          </button>
+        </div>
+      ) : (
+        <div className="shrink-0 px-5 py-2 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleBackAction}
+            disabled={isSubmitting}
+            className="w-23 h-9 bg-[#E0E0E0] hover:bg-[#D4D4D4] active:scale-95 text-gray-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center disabled:opacity-50"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={handleNextOrSubmit}
+            disabled={isSubmitting}
+            className="w-28 h-9 bg-[#0970DD] hover:bg-[#0765C8] active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center disabled:opacity-75"
+          >
+            {isSubmitting ? (
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="text-xs">Menilai...</span>
+              </div>
+            ) : hasMultipleQuestions &&
+              internalQuestionIndex < questionsList.length - 1 ? (
+              "Next"
+            ) : (
+              "Submit"
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

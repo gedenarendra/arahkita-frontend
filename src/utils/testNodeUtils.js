@@ -152,3 +152,96 @@ export const generateNodesList = ({
     };
   });
 };
+
+/**
+ * Mentransformasikan array MinicaseNode dari backend ke format visual node XYFlow.
+ * Selalu menempatkan Node 1 sebagai Syarat & Ketentuan (Rules) di urutan paling awal,
+ * diikuti oleh minicase_number 2 hingga 11.
+ *
+ * @param {object} params
+ * @param {Array<object>} params.minicases
+ * @param {string} params.major
+ * @param {string} params.template
+ * @returns {Array<object>} Array node siap pakai untuk GraphNodeComponent
+ */
+export const mapMinicasesToTestNodes = ({
+  minicases = [],
+  major = "Math",
+  template = POSITION_TEMPLATES.ZIGZAG_LEFT,
+}) => {
+  // Node 1: Selalu berupa Rules Pengerjaan (Terms & Policy) di frontend
+  const ruleNode = {
+    id: "rule-1",
+    type: "platform",
+    data: {
+      id: "rule-1",
+      label: "1",
+      level: 1,
+      hasStar: true,
+      isRule: true,
+      major,
+    },
+    position: calculateNodePosition(0, template),
+    style: {
+      width: 100,
+      height: 68,
+      background: "transparent",
+      border: "none",
+      padding: 0,
+    },
+  };
+
+  if (!Array.isArray(minicases) || minicases.length === 0) {
+    return [ruleNode];
+  }
+
+  // Urutkan minicases berdasarkan minicase_number
+  const sorted = [...minicases].sort(
+    (a, b) => (Number(a.minicase_number) || 0) - (Number(b.minicase_number) || 0)
+  );
+
+  const questionNodes = sorted.map((mc, idx) => {
+    const level = mc.minicase_number || idx + 2;
+    const index = level - 1; // index posisi (Level 2 -> index 1, Level 3 -> index 2, dst.)
+
+    return {
+      id: mc.id || `minicase-${level}`,
+      type: "platform",
+      data: {
+        id: mc.id,
+        label: String(level),
+        level,
+        hasStar: true,
+        color: mc.circle_color,
+        isCompleted: Boolean(mc.is_done),
+        questionData: {
+          id: mc.id,
+          type: mc.node_type === "essay" ? "essay" : "multiple",
+          node_type: mc.node_type,
+          title: `${major} Question`,
+          question: mc.question,
+          options: mc.options,
+          correct_answer: mc.correct_answer,
+          evaluation_hint: mc.evaluation_hint,
+          user_answer: mc.user_answer,
+          is_done: Boolean(mc.is_done),
+          subtext: mc.subject_name
+            ? `Mata Kuliah: ${mc.subject_name}`
+            : undefined,
+          raw: mc,
+        },
+        raw: mc,
+      },
+      position: calculateNodePosition(index, template),
+      style: {
+        width: 100,
+        height: 68,
+        background: "transparent",
+        border: "none",
+        padding: 0,
+      },
+    };
+  });
+
+  return [ruleNode, ...questionNodes];
+};

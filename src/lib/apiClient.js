@@ -1,22 +1,22 @@
-import axios from 'axios';
-import config from '../config/config';
+import axios from "axios";
+import config from "../config/config";
 
 export const axiosInstance = axios.create({
   baseURL: config.apiBaseUrl,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 axiosInstance.interceptors.request.use(
   (reqConfig) => reqConfig,
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 export const apiClient = {
@@ -35,7 +35,8 @@ export const apiClient = {
       return {
         success: false,
         data: null,
-        error: error.response?.data?.message || error.message || 'Request failed',
+        error:
+          error.response?.data?.message || error.message || "Request failed",
       };
     }
   },
@@ -52,7 +53,8 @@ export const apiClient = {
       return {
         success: false,
         data: null,
-        error: error.response?.data?.message || error.message || 'Request failed',
+        error:
+          error.response?.data?.message || error.message || "Request failed",
       };
     }
   },

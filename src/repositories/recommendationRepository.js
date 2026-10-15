@@ -93,6 +93,21 @@ export const recommendationRepository = {
   },
 
   /**
+   * Mengambil preview evaluasi trial untuk suatu jurusan spesifik.
+   *
+   * @param {string} majorId
+   * @returns {Promise<object|null>}
+   */
+  async getPreviewByMajorId(majorId) {
+    if (!majorId) return null;
+    try {
+      return (await db.previews.where('major_node_id').equals(String(majorId)).first()) || null;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Menyimpan hasil evaluasi preview jurusan ke IndexedDB.
    */
   async savePreview(preview) {

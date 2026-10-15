@@ -9,6 +9,8 @@ function TestPages({
   currentQuestion,
   totalQuestions,
   progress,
+  isReadOnly = false,
+  isSubmitting = false,
   onBack,
   onAgreeTerms,
   onSubmitQuestion,
@@ -31,6 +33,8 @@ function TestPages({
       currentQuestion={currentQuestion}
       totalQuestions={totalQuestions}
       progress={progress}
+      isReadOnly={isReadOnly}
+      isSubmitting={isSubmitting}
       onBack={onBack}
       onSubmit={onSubmitQuestion}
     />

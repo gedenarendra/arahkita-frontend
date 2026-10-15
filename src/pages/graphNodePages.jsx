@@ -97,13 +97,16 @@ function GraphNodePages({
     controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
 
   const handleNodeClick = (_event, node) => {
-    const rawLabel = node?.data?.label?.trim();
-    let majorName = "Math";
-    if (rawLabel) {
-      majorName =
-        rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1).toLowerCase();
-    }
-    setSelectedMajor(majorName);
+    const rawData = node?.data?.raw || {};
+    const label = node?.data?.label || rawData.major_name || "Math";
+    const majorObj = {
+      id: node?.data?.id || rawData.id || node?.id,
+      major_name: rawData.major_name || label,
+      circle_color: node?.data?.color || rawData.circle_color || "#4F46E5",
+      child_id: node?.data?.childId || rawData.child_id || null,
+      raw: rawData,
+    };
+    setSelectedMajor(majorObj);
   };
 
   const handleTabChange = (tab) => {
@@ -123,8 +126,13 @@ function GraphNodePages({
       {selectedMajor ? (
         <div className="flex-1 min-h-0">
           <MajorTestComponent
-            major={selectedMajor}
+            majorData={selectedMajor}
+            major={selectedMajor.major_name || "Math"}
             onBack={() => setSelectedMajor(null)}
+            onNavigateToRecommendation={() => {
+              setSelectedMajor(null);
+              handleTabChange("recomendation");
+            }}
           />
         </div>
       ) : (
