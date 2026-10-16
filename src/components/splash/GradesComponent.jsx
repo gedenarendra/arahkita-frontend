@@ -78,7 +78,9 @@ function GradesComponent({
     if (!query) return;
 
     if (subjects.length >= MAX_SUBJECTS_COUNT) {
-      setLocalError(`Maksimal ${MAX_SUBJECTS_COUNT} mata pelajaran sudah tercapai.`);
+      setLocalError(
+        `Maksimal ${MAX_SUBJECTS_COUNT} mata pelajaran sudah tercapai.`,
+      );
       return;
     }
 
@@ -237,7 +239,8 @@ function GradesComponent({
               </button>
               {subjects.length < MIN_SUBJECTS_COUNT && (
                 <span className="text-[11px] text-white/70">
-                  Minimal {MIN_SUBJECTS_COUNT} mata pelajaran ({subjects.length}/{MIN_SUBJECTS_COUNT})
+                  Minimal {MIN_SUBJECTS_COUNT} mata pelajaran ({subjects.length}
+                  /{MIN_SUBJECTS_COUNT})
                 </span>
               )}
             </div>
@@ -327,4 +330,3 @@ function GradesComponent({
 }
 
 export default GradesComponent;
-
