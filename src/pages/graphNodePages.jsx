@@ -179,10 +179,10 @@ function GraphNodePages({
               {/* Teks Greeting */}
               <div className="ml-40 pl-4 z-10">
                 <p className="text-sm text-blue-200 font-semibold leading-tight">
-                  Hai, Goodmorning
+                  Hi, Good Morning
                 </p>
                 <p className="text-[19px] font-extrabold text-white tracking-tight leading-snug">
-                  welcome to arahkita
+                  Welcome to Arahkita
                 </p>
               </div>
             </div>

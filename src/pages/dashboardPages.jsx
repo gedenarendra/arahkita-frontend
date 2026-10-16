@@ -104,10 +104,10 @@ function DashboardPages({
         {/* Greeting Section */}
         <section className="mt-9 md:mt-8 flex flex-col">
           <p className="text-[13px] md:text-sm lg:text-base font-semibold text-[#8f96a3] tracking-wide">
-            Hai, Goodmorning
+            Hi, Good Morning
           </p>
           <p className="text-xl md:text-sm lg:text-3xl font-extrabold text-black tracking-tight leading-tight">
-            welcome to arahkita
+            Welcome to Arahkita
           </p>
         </section>
 

@@ -6,7 +6,7 @@ function WelcomeStep() {
       {/* Teks Sambutan (Centered Sesuai Mockup) */}
       <div className="text-center w-full max-w-xl mx-auto pt-52 sm:pt-4 md:pt-6 shrink-0 flex flex-col items-center">
         <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-snug text-center">
-          welcome to Arahkita
+          Welcome to Arahkita
         </h1>
         <p className="text-xs sm:text-xs md:text-sm text-white/90 font-normal leading-relaxed mt-1.5 sm:mt-2 max-w-xs sm:max-w-sm md:max-w-md mx-auto px-4 text-center">
           Dengan arahkita, akan membantu kalian menemukan minat bakat serta
