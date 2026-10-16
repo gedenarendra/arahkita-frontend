@@ -39,7 +39,8 @@ const DEFAULT_CAREERS = [
       },
       {
         label: "EduTech Content Creator",
-        description: "Penyusun materi pembelajaran di platform pendidikan digital.",
+        description:
+          "Penyusun materi pembelajaran di platform pendidikan digital.",
       },
     ],
   },
@@ -79,7 +80,8 @@ const DEFAULT_CAREERS = [
       },
       {
         label: "Lembaga Riset",
-        description: "Survei statistik, riset pasar, dan institusi riset publik.",
+        description:
+          "Survei statistik, riset pasar, dan institusi riset publik.",
       },
     ],
   },
@@ -118,7 +120,10 @@ function MajorPreviewComponent({
           title: c.title,
           description: c.detail || c.description || "",
           workEnvironments: c.workEnvironments || [
-            { label: "Sektor Industri", description: `Bidang profesi terkait ${major}.` },
+            {
+              label: "Sektor Industri",
+              description: `Bidang profesi terkait ${major}.`,
+            },
           ],
         }))
       : DEFAULT_CAREERS;
@@ -222,14 +227,16 @@ function MajorPreviewComponent({
             ) : (
               <>
                 <p>
-                  Mengapa Jurusan Ini Cocok Untukmu? Berdasarkan jawaban dan pilihan
-                  yang kamu berikan, kamu menunjukkan pola pikir yang sangat analitis,
-                  terstruktur, dan logis. Pendekatan berpikirmu yang objektif ini adalah fondasi
-                  utama yang sangat dibutuhkan dalam program studi {major}.
+                  Mengapa Jurusan Ini Cocok Untukmu? Berdasarkan jawaban dan
+                  pilihan yang kamu berikan, kamu menunjukkan pola pikir yang
+                  sangat analitis, terstruktur, dan logis. Pendekatan berpikirmu
+                  yang objektif ini adalah fondasi utama yang sangat dibutuhkan
+                  dalam program studi {major}.
                 </p>
                 <p>
-                  Di jurusan ini, kamu akan mengasah kemampuan problem-solving tingkat lanjut
-                  yang membuatmu siap berkarir di berbagai industri modern dan berkembang.
+                  Di jurusan ini, kamu akan mengasah kemampuan problem-solving
+                  tingkat lanjut yang membuatmu siap berkarir di berbagai
+                  industri modern dan berkembang.
                 </p>
               </>
             )}
@@ -249,7 +256,7 @@ function MajorPreviewComponent({
                 key={career.id}
                 type="button"
                 onClick={() => onSelectCareer(career)}
-                className="w-full h-10 border border-gray-300 bg-white hover:bg-gray-50 active:scale-97 rounded-xl font-bold text-xs sm:text-sm text-gray-950 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                className="w-full h-10 bg-[#213F73] hover:bg-[#1b3562] active:scale-97 rounded-xl font-bold text-xs sm:text-sm text-white flex items-center justify-center transition-all cursor-pointer shadow-2xs"
               >
                 {career.title}
               </button>
@@ -262,4 +269,3 @@ function MajorPreviewComponent({
 }
 
 export default MajorPreviewComponent;
-
