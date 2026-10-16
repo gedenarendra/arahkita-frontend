@@ -145,16 +145,18 @@ function SplashPages({ onComplete }) {
     >
       {/* ── 1. Header Putih Atas (Hanya tampil di Slide 2, 3, 4, 5 dengan Logo Arahkita) ── */}
       {currentStep > 1 && (
-        <header className="shrink-0 h-20 sm:h-23.75 w-full flex items-end justify-end px-6 sm:px-12 md:px-20 lg:px-28 pb-3 bg-white z-10">
-          <div className="flex items-center">
-            <img
-              src={logoArahkita}
-              alt="Logo Arahkita"
-              className="h-7 sm:h-8 w-auto object-contain"
-            />
-            <span className="text-[22px] sm:text-[24px] font-bold text-gray-950 tracking-tight">
-              rahkita
-            </span>
+        <header className="shrink-0 h-16 sm:h-18 md:h-20 w-full flex items-end justify-end bg-white z-10">
+          <div className="w-full max-w-2xl lg:max-w-3xl mx-auto flex items-center justify-end px-6 sm:px-8 pb-2 sm:pb-3">
+            <div className="flex items-center">
+              <img
+                src={logoArahkita}
+                alt="Logo Arahkita"
+                className="h-7 sm:h-8 w-auto object-contain"
+              />
+              <span className="text-[22px] sm:text-[24px] font-bold text-gray-950 tracking-tight">
+                rahkita
+              </span>
+            </div>
           </div>
         </header>
       )}
@@ -172,7 +174,7 @@ function SplashPages({ onComplete }) {
               viewBox="0 0 1000 30"
               fill="none"
               preserveAspectRatio="none"
-              className="w-full h-5 sm:h-7 md:h-8 block"
+              className="w-full h-4 sm:h-5 md:h-6 block"
             >
               <path
                 d="M 0,0 L 1000,0 L 1000,30 Q 500,0 0,30 Z"
@@ -186,9 +188,9 @@ function SplashPages({ onComplete }) {
           </div>
         )}
 
-        {/* Isi Konten Tiap Step di Dalam Area Biru (Melebar 100% Layar) */}
-        <div className="flex-1 min-h-0 w-full bg-[#0C3C6F] flex flex-col justify-between px-6 sm:px-12 md:px-20 lg:px-28 overflow-hidden">
-          <div className="flex-1 min-h-0 w-full flex flex-col justify-between overflow-hidden">
+        {/* Isi Konten Tiap Step di Dalam Area Biru (Responsif di Seluruh Ukuran Desktop) */}
+        <div className="flex-1 min-h-0 w-full bg-[#0C3C6F] flex flex-col justify-between overflow-hidden">
+          <div className="flex-1 min-h-0 w-full max-w-2xl lg:max-w-3xl mx-auto px-6 sm:px-8 flex flex-col justify-between overflow-hidden">
             {currentStep === 1 && <WelcomeStep />}
             {currentStep === 2 && <InterestStep />}
             {currentStep === 3 && (
@@ -234,7 +236,7 @@ function SplashPages({ onComplete }) {
 
           {/* Indikator Titik Terpusat (4 Titik: Step 1, 2, 3, 4) */}
           {currentStep < 5 && (
-            <div className="flex items-center justify-center gap-2.5 pb-2.5 shrink-0 z-10">
+            <div className="flex items-center justify-center gap-2.5 pb-2 sm:pb-2.5 shrink-0 z-10">
               <span
                 className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
                   currentStep === 1 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
@@ -266,7 +268,7 @@ function SplashPages({ onComplete }) {
               viewBox="0 0 1000 100"
               fill="none"
               preserveAspectRatio="none"
-              className="w-full h-14 sm:h-18 md:h-22 block"
+              className="w-full h-12 sm:h-14 md:h-16 block"
             >
               {/* Bagian Bawah Putih Menuju Tombol */}
               <path
@@ -281,34 +283,38 @@ function SplashPages({ onComplete }) {
             </svg>
           </div>
         ) : currentStep === 1 ? (
-          <div className="w-full h-14 sm:h-18 md:h-22 shrink-0 bg-[#0C3C6F]" />
+          <div className="w-full h-12 sm:h-14 md:h-16 shrink-0 bg-[#0C3C6F]" />
         ) : null}
       </div>
 
       {/* ── 3. Area Tombol Navigasi Bawah (Hanya Slide 1, 2, 3, 4) ── */}
       {currentStep < 5 && (
         <div
-          className={`shrink-0 w-full px-6 sm:px-12 md:px-20 lg:px-28 flex items-center z-10 pt-2.5 sm:pt-4 pb-9 sm:pb-12 ${
-            currentStep === 1
-              ? "bg-[#0C3C6F] justify-end"
-              : "bg-white justify-between"
+          className={`shrink-0 w-full z-10 pt-2 sm:pt-3 pb-6 sm:pb-8 ${
+            currentStep === 1 ? "bg-[#0C3C6F]" : "bg-white"
           }`}
         >
-          {currentStep > 1 ? (
-            <button
-              onClick={handleBack}
-              className="w-22.5 sm:w-25 h-9 sm:h-9.5 bg-[#D9D9D9] hover:bg-[#C8C8C8] active:scale-95 text-gray-900 font-semibold text-sm rounded-xl shadow-sm flex items-center justify-center transition-all cursor-pointer"
-            >
-              Back
-            </button>
-          ) : null}
-
-          <button
-            onClick={handleNext}
-            className="w-22.5 sm:w-25 h-9 sm:h-9.5 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/25 flex items-center justify-center transition-all cursor-pointer"
+          <div
+            className={`w-full max-w-2xl lg:max-w-3xl mx-auto px-6 sm:px-8 flex items-center ${
+              currentStep === 1 ? "justify-end" : "justify-between"
+            }`}
           >
-            Next
-          </button>
+            {currentStep > 1 ? (
+              <button
+                onClick={handleBack}
+                className="w-22.5 sm:w-25 h-9 sm:h-9.5 bg-[#D9D9D9] hover:bg-[#C8C8C8] active:scale-95 text-gray-900 font-semibold text-sm rounded-xl shadow-sm flex items-center justify-center transition-all cursor-pointer"
+              >
+                Back
+              </button>
+            ) : null}
+
+            <button
+              onClick={handleNext}
+              className="w-22.5 sm:w-25 h-9 sm:h-9.5 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/25 flex items-center justify-center transition-all cursor-pointer"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

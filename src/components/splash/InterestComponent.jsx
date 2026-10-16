@@ -347,22 +347,22 @@ function InterestComponent({
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between overflow-y-auto font-sans select-none">
+    <div className="w-full h-full flex flex-col justify-between overflow-y-auto scrollbar-thin font-sans select-none">
       {/* ── Teks Judul & Deskripsi (Sesuai Mockup) ── */}
-      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-14 ps-4 shrink-0">
+      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-4 md:pt-6 ps-4 sm:ps-2 shrink-0">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
           Tentukan minat mu
         </h1>
         <p className="text-xs sm:text-sm text-white/90 font-normal leading-relaxed mt-2 max-w-sm sm:max-w-md">
-          Masukan nilai rata” setiap mata pelajaran yang sesuai dengan kategori,
+          Masukan nilai rata“ setiap mata pelajaran yang sesuai dengan kategori,
           agar membantu proses pencocokan jurusan
         </p>
       </div>
 
       {/* ── 1. Tampilan Gelembung Ikon & Kotak '+' (Sesuai Gambar 1) ── */}
       {subStep === 1 && (
-        <div className="mt-4 sm:mt-2 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-4">
-          <div className="relative w-72 sm:w-80 h-72 sm:h-80 flex items-center justify-center">
+        <div className="mt-2 sm:mt-1 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-1 sm:py-2">
+          <div className="relative w-72 sm:w-80 h-72 sm:h-80 flex items-center justify-center scale-90 sm:scale-95 md:scale-100 origin-center">
             {/* 1. Gelembung Atas: Peta & Lokasi */}
             <button
               type="button"
@@ -473,7 +473,7 @@ function InterestComponent({
 
       {/* ── 2. Tampilan Input & Daftar Minat (Sesuai Gambar 2) ── */}
       {subStep === 2 && (
-        <div className="mt-6 sm:mt-4 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
+        <div className="mt-4 sm:mt-2 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
           {/* Indikator Jumlah Minat */}
           <div className="text-xs text-white/90 font-semibold mb-2 bg-white/10 px-3 py-1 rounded-full">
             {interests.length}/{maxInterests} minat terpilih
@@ -482,7 +482,7 @@ function InterestComponent({
           {/* Kotak Putih "masukan sini" */}
           <form
             onSubmit={handleAddSubmit}
-            className={`w-full max-w-65 sm:max-w-72 h-12 sm:h-13 bg-white rounded-xl flex items-center justify-center px-4 shadow-sm ${
+            className={`w-full max-w-65 sm:max-w-72 md:max-w-80 h-12 sm:h-13 bg-white rounded-xl flex items-center justify-center px-4 shadow-sm ${
               interests.length >= maxInterests ? "opacity-75" : ""
             }`}
           >
@@ -509,7 +509,7 @@ function InterestComponent({
           )}
 
           {/* Daftar Kartu Minat (Background Abu-abu dengan Teks Tengah & Tombol 'X' di Kanan) */}
-          <div className="w-full max-w-75 sm:max-w-82 space-y-2.5 mt-6 sm:mt-8">
+          <div className="w-full max-w-75 sm:max-w-82 md:max-w-90 space-y-2.5 mt-4 sm:mt-5 max-h-[38vh] sm:max-h-[44vh] overflow-y-auto scrollbar-thin px-1 py-1">
             {interests.map((item) => (
               <div
                 key={item.instanceId}

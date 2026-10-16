@@ -137,9 +137,9 @@ function GradesComponent({
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between overflow-y-auto font-sans select-none">
+    <div className="w-full h-full flex flex-col justify-between overflow-y-auto scrollbar-thin font-sans select-none">
       {/* ── Teks Judul & Deskripsi (Sesuai Mockup) ── */}
-      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-14 ps-4 shrink-0">
+      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-4 md:pt-6 ps-4 sm:ps-2 shrink-0">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
           Nilai Rata- Rata
         </h1>
@@ -151,11 +151,11 @@ function GradesComponent({
 
       {/* ── 1. Komponen Belum Ada Mata Pelajaran (Fase Pencarian) ── */}
       {subStep === 1 && (
-        <div className="mt-8 sm:mt-5 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
+        <div className="mt-8 sm:mt-4 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
           {/* Kotak Pencarian Putih */}
           <form
             onSubmit={handleSearchSubmit}
-            className="w-full max-w-61.25 sm:max-w-65 h-10 sm:h-11 bg-white rounded-lg flex items-center justify-between px-3.5 shadow-sm"
+            className="w-full max-w-61.25 sm:max-w-72 md:max-w-80 h-10 sm:h-11 bg-white rounded-lg flex items-center justify-between px-3.5 shadow-sm"
           >
             <input
               type="text"
@@ -185,7 +185,7 @@ function GradesComponent({
 
           {/* Card Hasil Pencarian (Awalnya kosong, muncul setelah input & pencarian) */}
           {subjects.length > 0 && (
-            <div className="mt-6 sm:mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-75 sm:max-w-90 mx-auto">
+            <div className="mt-5 sm:mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-75 sm:max-w-md md:max-w-lg mx-auto">
               {subjects.map((subject) => (
                 <div
                   key={subject.instanceId}
@@ -250,13 +250,13 @@ function GradesComponent({
 
       {/* ── 2. Komponen Jika Sudah Ada Mata Pelajaran (Fase Pengisian Nilai) ── */}
       {subStep === 2 && (
-        <div className="mt-6 sm:mt-5 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
+        <div className="mt-4 sm:mt-3 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
           {displayError && (
             <p className="pb-3 text-amber-200 text-xs text-center font-medium px-4">
               {displayError}
             </p>
           )}
-          <div className="space-y-3 sm:space-y-3.5 w-full max-w-70 sm:max-w-77.5">
+          <div className="space-y-3 sm:space-y-3.5 w-full max-w-70 sm:max-w-82 md:max-w-90 max-h-[42vh] sm:max-h-[46vh] overflow-y-auto scrollbar-thin px-1 py-1">
             {subjects.map((subject) => (
               <div
                 key={subject.instanceId}
