@@ -1,67 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import GraphNodeComponent from "../components/graphNodeComponent";
 import MajorTestComponent from "../components/MajorTestComponent";
 import BottomNavigation from "../components/BottomNavigation";
 import logoArahkita from "../assets/Logo.png";
 import heroIllustration from "../assets/rafiki.svg";
 import { getCachedMajors } from "../api/majorApi";
+import { getInitialClusterGraph } from "../utils/clusterGraphUtils";
 
-// Helper node platform 3D silinder isometrik dengan index animasi berurutan
-const platformNode = (w, h, label, index = 0) => ({
-  id: label || Math.random().toString(),
-  type: "platform",
-  data: { label, index },
-  style: {
-    width: w,
-    height: h,
-    background: "transparent",
-    border: "none",
-    boxShadow: "none",
-    padding: 0,
-  },
-});
-
-const initialNodes = [
-  // Row 1 — SOSIOLOGI & SPORT
-  {
-    ...platformNode(125, 75, "SOSIOLOGI", 0),
-    id: "n1",
-    position: { x: 45, y: 30 },
-  },
-  {
-    ...platformNode(115, 70, "SPORT", 1),
-    id: "n2",
-    position: { x: 250, y: 18 },
-  },
-  // Row 2 — MANAGEMENT & MATH
-  {
-    ...platformNode(152, 78, "MANAGEMENT", 2),
-    id: "n3",
-    position: { x: 18, y: 178 },
-  },
-  {
-    ...platformNode(118, 72, "MATH", 3),
-    id: "n4",
-    position: { x: 245, y: 210 },
-  },
-  // Row 3 — TEKNOLOGI
-  {
-    ...platformNode(140, 75, "TEKNOLOGI", 4),
-    id: "n5",
-    position: { x: 130, y: 355 },
-  },
-];
-
-const initialEdges = [];
+const initialGraph = getInitialClusterGraph();
+const initialNodes = initialGraph.nodes;
+const initialEdges = initialGraph.edges;
 
 function GraphNodePages({
   nodes: propNodes,
+  edges: propEdges,
   activeTab: controlledActiveTab,
   onTabChange,
 }) {
   const [internalActiveTab, setInternalActiveTab] = useState("home");
   const [selectedMajor, setSelectedMajor] = useState(null);
-  const [cachedNodes, setCachedNodes] = useState(null);
+  const [cachedGraph, setCachedGraph] = useState(null);
 
   useEffect(() => {
     if (Array.isArray(propNodes) && propNodes.length > 0) {
@@ -70,8 +28,11 @@ function GraphNodePages({
 
     let isMounted = true;
     getCachedMajors().then((result) => {
-      if (isMounted && result?.mappedNodes && result.mappedNodes.length > 0) {
-        setCachedNodes(result.mappedNodes);
+      if (isMounted && result?.nodes && result.nodes.length > 0) {
+        setCachedGraph({
+          nodes: result.nodes,
+          edges: result.edges || [],
+        });
       }
     });
 
@@ -84,19 +45,36 @@ function GraphNodePages({
     typeof window !== "undefined" &&
     localStorage.getItem("has_onboarded") === "true";
 
-  const displayedNodes =
-    Array.isArray(propNodes) && propNodes.length > 0
+  const displayedNodes = useMemo(() => {
+    return Array.isArray(propNodes) && propNodes.length > 0
       ? propNodes
-      : cachedNodes && cachedNodes.length > 0
-      ? cachedNodes
-      : hasOnboarded
-      ? []
-      : initialNodes;
+      : cachedGraph?.nodes && cachedGraph.nodes.length > 0
+        ? cachedGraph.nodes
+        : hasOnboarded
+          ? []
+          : initialNodes;
+  }, [propNodes, cachedGraph, hasOnboarded]);
+
+  const displayedEdges = useMemo(() => {
+    return Array.isArray(propEdges) && propEdges.length > 0
+      ? propEdges
+      : cachedGraph?.edges && cachedGraph.edges.length > 0
+        ? cachedGraph.edges
+        : hasOnboarded &&
+            (!cachedGraph?.nodes || cachedGraph.nodes.length === 0)
+          ? []
+          : initialEdges;
+  }, [propEdges, cachedGraph, hasOnboarded]);
 
   const activeTab =
     controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
 
   const handleNodeClick = (_event, node) => {
+    // Jika yang diklik adalah Node Rumpun Bidang, abaikan pembukaan soal
+    if (node?.data?.isCluster) {
+      return;
+    }
+
     const rawData = node?.data?.raw || {};
     const label = node?.data?.label || rawData.major_name || "Math";
     const majorObj = {
@@ -108,6 +86,41 @@ function GraphNodePages({
     };
     setSelectedMajor(majorObj);
   };
+
+  // Hitung batas gerak canvas (bounding box) agar node dan edge tidak bisa digeser keluar layar
+  const translateExtent = useMemo(() => {
+    if (!displayedNodes || displayedNodes.length === 0) {
+      return [
+        [-50, -50],
+        [500, 800],
+      ];
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    displayedNodes.forEach((node) => {
+      const x = node.position?.x ?? 0;
+      const y = node.position?.y ?? 0;
+      const w = Number(node.style?.width) || 145;
+      const h = Number(node.style?.height) || 76;
+
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x + w > maxX) maxX = x + w;
+      if (y + h > maxY) maxY = y + h;
+    });
+
+    const paddingX = 60;
+    const paddingY = 60;
+
+    return [
+      [minX - paddingX, minY - paddingY],
+      [maxX + paddingX, maxY + paddingY],
+    ];
+  }, [displayedNodes]);
 
   const handleTabChange = (tab) => {
     if (onTabChange) {
@@ -174,13 +187,16 @@ function GraphNodePages({
           <div className="flex-1 min-h-0">
             <GraphNodeComponent
               nodes={displayedNodes}
-              edges={initialEdges}
+              edges={displayedEdges}
               fitView
-              fitViewOptions={{ padding: 0.25 }}
-              panOnDrag={false}
-              panOnScroll={false}
+              fitViewOptions={{ padding: 0.15 }}
+              translateExtent={translateExtent}
+              minZoom={0.65}
+              maxZoom={1.3}
+              panOnDrag={true}
+              panOnScroll={true}
               zoomOnScroll={false}
-              zoomOnPinch={false}
+              zoomOnPinch={true}
               zoomOnDoubleClick={false}
               nodesDraggable={false}
               nodesConnectable={false}

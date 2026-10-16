@@ -1,6 +1,7 @@
 import apiClient from '../lib/apiClient';
 import majorRepository from '../repositories/majorRepository';
 import { mapSubjectsToBackendPayload } from '../utils/subjectMapping';
+import { buildClusterHierarchyGraph } from '../utils/clusterGraphUtils';
 
 export const NODE_LAYOUT_SLOTS = [
   { x: 45, y: 30, w: 135, h: 75 },
@@ -12,10 +13,7 @@ export const NODE_LAYOUT_SLOTS = [
 ];
 
 /**
- * Mentransformasikan array MajorNode dari backend ke format visual node UI (XYFlow platform node).
- *
- * @param {Array<{ id: string, major_name: string, circle_color: string, child_id: string|null }>} nodes
- * @returns {Array<object>} Array node siap pakai untuk GraphNodeComponent / XYFlow
+ * Mentransformasikan array MajorNode ke format visual node UI sederhana (Legacy mapping).
  */
 export function mapMajorNodesToUi(nodes = []) {
   if (!Array.isArray(nodes)) return [];
@@ -61,7 +59,7 @@ export function mapMajorNodesToUi(nodes = []) {
  * @param {object} params
  * @param {string} params.minat - Teks deskripsi/string minat siswa
  * @param {{ Matematika: number, IPA: number, Bahasa_Inggris: number }} params.nilai - Nilai mata pelajaran
- * @returns {Promise<{ success: boolean, data: Array, mappedNodes: Array, fromCache: boolean, error: string|null }>}
+ * @returns {Promise<{ success: boolean, data: Array, mappedNodes: Array, mappedEdges: Array, fromCache: boolean, error: string|null }>}
  */
 export async function fetchRecommendedMajors({ minat, nilai }) {
   const sanitizedNilai = mapSubjectsToBackendPayload(nilai);
@@ -71,11 +69,15 @@ export async function fetchRecommendedMajors({ minat, nilai }) {
 
   if (response.success && Array.isArray(response.data)) {
     await majorRepository.saveMajors(response.data);
+    const hierarchy = buildClusterHierarchyGraph(response.data);
 
     return {
       success: true,
       data: response.data,
-      mappedNodes: mapMajorNodesToUi(response.data),
+      mappedNodes: hierarchy.nodes,
+      mappedEdges: hierarchy.edges,
+      nodes: hierarchy.nodes,
+      edges: hierarchy.edges,
       fromCache: false,
       error: null,
     };
@@ -84,10 +86,14 @@ export async function fetchRecommendedMajors({ minat, nilai }) {
   // Fallback offline-first: Cek data lokal dari IndexedDB
   const cached = await majorRepository.getAllMajors();
   if (cached && cached.length > 0) {
+    const hierarchy = buildClusterHierarchyGraph(cached);
     return {
       success: true,
       data: cached,
-      mappedNodes: mapMajorNodesToUi(cached),
+      mappedNodes: hierarchy.nodes,
+      mappedEdges: hierarchy.edges,
+      nodes: hierarchy.nodes,
+      edges: hierarchy.edges,
       fromCache: true,
       error: null,
     };
@@ -97,19 +103,27 @@ export async function fetchRecommendedMajors({ minat, nilai }) {
     success: false,
     data: null,
     mappedNodes: [],
+    mappedEdges: [],
+    nodes: [],
+    edges: [],
     fromCache: false,
     error: response.error || 'Gagal memuat rekomendasi jurusan',
   };
 }
 
 /**
- * Mengambil data rekomendasi jurusan yang tersimpan di IndexedDB.
+ * Mengambil data rekomendasi jurusan yang tersimpan di IndexedDB dan memetakannya ke graf hierarki.
  */
 export async function getCachedMajors() {
   const cached = await majorRepository.getAllMajors();
+  const hierarchy = buildClusterHierarchyGraph(cached);
+
   return {
     data: cached,
-    mappedNodes: mapMajorNodesToUi(cached),
+    mappedNodes: hierarchy.nodes,
+    mappedEdges: hierarchy.edges,
+    nodes: hierarchy.nodes,
+    edges: hierarchy.edges,
   };
 }
 
@@ -117,6 +131,7 @@ export const majorApi = {
   fetchRecommendedMajors,
   getCachedMajors,
   mapMajorNodesToUi,
+  buildClusterHierarchyGraph,
 };
 
 export default majorApi;
