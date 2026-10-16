@@ -539,8 +539,8 @@ function MajorTestComponent({
 
       {/* ── 5. Modal Hasil Evaluasi Trial (Completion Modal) ── */}
       {showCompletionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col items-center text-center max-h-[92vh] overflow-y-auto scrollbar-thin">
             {/* Tombol Tutup X */}
             <button
               type="button"
@@ -612,7 +612,7 @@ function MajorTestComponent({
                           {previewResult.career_paths.length} Jalur Profesi
                         </span>
                       </div>
-                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
                         {previewResult.career_paths.map((cp, idx) => (
                           <div
                             key={cp.id || `career-${idx}`}
