@@ -2,6 +2,7 @@ import apiClient from '../lib/apiClient';
 import majorRepository from '../repositories/majorRepository';
 import { mapSubjectsToBackendPayload } from '../utils/subjectMapping';
 import { buildClusterHierarchyGraph } from '../utils/clusterGraphUtils';
+import config from '../config/config';
 
 export const NODE_LAYOUT_SLOTS = [
   { x: 45, y: 30, w: 135, h: 75 },
@@ -51,29 +52,127 @@ export function mapMajorNodesToUi(nodes = []) {
 }
 
 /**
- * Melakukan fetch POST /api/v1/majors/recommend dengan strategi offline-first.
- * 1. Panggil backend API menggunakan apiClient.
- * 2. Jika sukses, simpan hasil ke IndexedDB (Dexie) melalui majorRepository.
- * 3. Jika API gagal / offline, otomatis fallback membaca data lokal dari IndexedDB.
+ * Melakukan fetch rekomendasi rumpun keilmuan dan jurusan dengan SSE Streaming.
+ * 1. Panggil SSE stream POST /api/v1/clusters/recommend-stream.
+ * 2. Emisi progres status, node cluster, dan node major secara real-time.
+ * 3. Simpan cluster dan major ke IndexedDB via majorRepository.saveClustersAndMajors.
+ * 4. Fallback 1: Jika SSE gagal/terputus, otomatis memanggil fallback sinkron POST /api/v1/clusters/recommend.
+ * 5. Fallback 2: Jika jaringan offline, membaca data lokal tersimpan dari IndexedDB.
  *
  * @param {object} params
- * @param {string} params.minat - Teks deskripsi/string minat siswa
- * @param {{ Matematika: number, IPA: number, Bahasa_Inggris: number }} params.nilai - Nilai mata pelajaran
- * @returns {Promise<{ success: boolean, data: Array, mappedNodes: Array, mappedEdges: Array, fromCache: boolean, error: string|null }>}
+ * @param {string} params.minat - Teks deskripsi keminatan siswa
+ * @param {object} params.nilai - Nilai mata pelajaran siswa
+ * @param {Function} [params.onStatus] - Callback saat menerima status progres
+ * @param {Function} [params.onCluster] - Callback saat menerima node cluster
+ * @param {Function} [params.onMajor] - Callback saat menerima node jurusan
+ * @param {AbortSignal} [params.signal] - AbortSignal untuk pembatalan request
+ * @returns {Promise<{ success: boolean, clusters: Array, majors: Array, data: Array, mappedNodes: Array, mappedEdges: Array, nodes: Array, edges: Array, fromCache: boolean, error: string|null }>}
  */
-export async function fetchRecommendedMajors({ minat, nilai }) {
+export async function fetchRecommendedClustersStream({
+  minat,
+  nilai,
+  onStatus,
+  onCluster,
+  onMajor,
+  signal,
+}) {
   const sanitizedNilai = mapSubjectsToBackendPayload(nilai);
   const payload = { minat, nilai: sanitizedNilai };
 
-  const response = await apiClient.post('/api/v1/majors/recommend', payload);
+  const baseUrl = config.apiBaseUrl.replace(/\/+$/, '');
+  const streamUrl = `${baseUrl}/api/v1/clusters/recommend-stream`;
 
-  if (response.success && Array.isArray(response.data)) {
-    await majorRepository.saveMajors(response.data);
-    const hierarchy = buildClusterHierarchyGraph(response.data);
+  const clusters = [];
+  const majors = [];
+  let streamSucceeded = false;
+
+  try {
+    const response = await fetch(streamUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify(payload),
+      signal,
+    });
+
+    if (response.ok && response.body) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      const processJsonLine = (jsonStr) => {
+        let parsed;
+        try {
+          parsed = JSON.parse(jsonStr);
+          if (!parsed || !parsed.type) return;
+
+          if (parsed.type === 'status' && parsed.data) {
+            onStatus?.(parsed.data);
+          } else if (parsed.type === 'cluster' && parsed.data) {
+            const clusterNode = parsed.data;
+            if (!clusters.some((c) => c.id === clusterNode.id)) {
+              clusters.push(clusterNode);
+            }
+            onCluster?.(clusterNode);
+          } else if (parsed.type === 'major' && parsed.data) {
+            const majorNode = parsed.data;
+            if (!majors.some((m) => m.id === majorNode.id)) {
+              majors.push(majorNode);
+            }
+            onMajor?.(majorNode);
+          } else if (parsed.type === 'done') {
+            streamSucceeded = true;
+          } else if (parsed.type === 'error') {
+            throw new Error(parsed.data?.message || 'Terjadi kesalahan pada stream backend');
+          }
+        } catch (err) {
+          if (parsed?.type === 'error') throw err;
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (value) {
+          buffer += decoder.decode(value, { stream: !done });
+          let newlineIndex;
+          while ((newlineIndex = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newlineIndex).trim();
+            buffer = buffer.slice(newlineIndex + 1);
+
+            if (line.startsWith('data:')) {
+              processJsonLine(line.slice(5).trim());
+            }
+          }
+        }
+
+        if (done) {
+          if (buffer.trim().startsWith('data:')) {
+            processJsonLine(buffer.trim().slice(5).trim());
+          }
+          break;
+        }
+      }
+
+      if (clusters.length > 0 && majors.length > 0) {
+        streamSucceeded = true;
+      }
+    }
+  } catch (streamError) {
+    console.warn('SSE Streaming kendala, beralih ke sync fallback:', streamError?.message);
+  }
+
+  // Jika streaming sukses menghasilkan data
+  if (streamSucceeded && (clusters.length > 0 || majors.length > 0)) {
+    await majorRepository.saveClustersAndMajors({ clusters, majors });
+    const hierarchy = buildClusterHierarchyGraph({ clusters, majors });
 
     return {
       success: true,
-      data: response.data,
+      clusters,
+      majors,
+      data: majors,
       mappedNodes: hierarchy.nodes,
       mappedEdges: hierarchy.edges,
       nodes: hierarchy.nodes,
@@ -83,13 +182,71 @@ export async function fetchRecommendedMajors({ minat, nilai }) {
     };
   }
 
-  // Fallback offline-first: Cek data lokal dari IndexedDB
-  const cached = await majorRepository.getAllMajors();
-  if (cached && cached.length > 0) {
-    const hierarchy = buildClusterHierarchyGraph(cached);
+  // ── FALLBACK 1: Endpoint Sinkron POST /api/v1/clusters/recommend ──
+  try {
+    const syncRes = await apiClient.post('/api/v1/clusters/recommend', payload);
+    if (syncRes.success && syncRes.data) {
+      const fallbackClusters = Array.isArray(syncRes.data.clusters) ? syncRes.data.clusters : [];
+      const fallbackMajors = Array.isArray(syncRes.data.majors) ? syncRes.data.majors : [];
+
+      if (fallbackClusters.length > 0 || fallbackMajors.length > 0) {
+        await majorRepository.saveClustersAndMajors({
+          clusters: fallbackClusters,
+          majors: fallbackMajors,
+        });
+        const hierarchy = buildClusterHierarchyGraph({
+          clusters: fallbackClusters,
+          majors: fallbackMajors,
+        });
+
+        return {
+          success: true,
+          clusters: fallbackClusters,
+          majors: fallbackMajors,
+          data: fallbackMajors,
+          mappedNodes: hierarchy.nodes,
+          mappedEdges: hierarchy.edges,
+          nodes: hierarchy.nodes,
+          edges: hierarchy.edges,
+          fromCache: false,
+          error: null,
+        };
+      }
+    }
+  } catch (syncError) {
+    console.warn('Sync cluster fallback kendala:', syncError?.message);
+  }
+
+  // ── FALLBACK 2: Membaca cache lokal dari IndexedDB (Offline-First) ──
+  const cachedData = await majorRepository.getAllClustersAndMajors();
+  if (
+    Array.isArray(cachedData?.majors) &&
+    cachedData.majors.length > 0
+  ) {
+    const hierarchy = buildClusterHierarchyGraph(cachedData);
     return {
       success: true,
-      data: cached,
+      clusters: cachedData.clusters || [],
+      majors: cachedData.majors,
+      data: cachedData.majors,
+      mappedNodes: hierarchy.nodes,
+      mappedEdges: hierarchy.edges,
+      nodes: hierarchy.nodes,
+      edges: hierarchy.edges,
+      fromCache: true,
+      error: null,
+    };
+  }
+
+  // Cek cache legacy jika belum ada data format cluster baru
+  const legacyCached = await majorRepository.getAllMajors();
+  if (Array.isArray(legacyCached) && legacyCached.length > 0) {
+    const hierarchy = buildClusterHierarchyGraph(legacyCached);
+    return {
+      success: true,
+      clusters: [],
+      majors: legacyCached,
+      data: legacyCached,
       mappedNodes: hierarchy.nodes,
       mappedEdges: hierarchy.edges,
       nodes: hierarchy.nodes,
@@ -101,37 +258,82 @@ export async function fetchRecommendedMajors({ minat, nilai }) {
 
   return {
     success: false,
+    clusters: [],
+    majors: [],
     data: null,
     mappedNodes: [],
     mappedEdges: [],
     nodes: [],
     edges: [],
     fromCache: false,
-    error: response.error || 'Gagal memuat rekomendasi jurusan',
+    error: 'Gagal memuat rekomendasi rumpun keilmuan dan jurusan',
   };
+}
+
+/**
+ * Melakukan fetch POST /api/v1/majors/recommend atau delegasi ke stream cluster.
+ * Menyediakan backward-compatibility bagi komponen pemanggil legacy.
+ */
+export async function fetchRecommendedMajors(params) {
+  return fetchRecommendedClustersStream(params);
 }
 
 /**
  * Mengambil data rekomendasi jurusan yang tersimpan di IndexedDB dan memetakannya ke graf hierarki.
  */
 export async function getCachedMajors() {
-  const cached = await majorRepository.getAllMajors();
-  const hierarchy = buildClusterHierarchyGraph(cached);
+  const cachedData = await majorRepository.getAllClustersAndMajors();
+  if (
+    Array.isArray(cachedData?.majors) &&
+    cachedData.majors.length > 0
+  ) {
+    const hierarchy = buildClusterHierarchyGraph(cachedData);
+    return {
+      data: cachedData.majors,
+      clusters: cachedData.clusters || [],
+      majors: cachedData.majors,
+      mappedNodes: hierarchy.nodes,
+      mappedEdges: hierarchy.edges,
+      nodes: hierarchy.nodes,
+      edges: hierarchy.edges,
+    };
+  }
 
+  const legacyCached = await majorRepository.getAllMajors();
+  if (Array.isArray(legacyCached) && legacyCached.length > 0) {
+    const hierarchy = buildClusterHierarchyGraph(legacyCached);
+    return {
+      data: legacyCached,
+      clusters: [],
+      majors: legacyCached,
+      mappedNodes: hierarchy.nodes,
+      mappedEdges: hierarchy.edges,
+      nodes: hierarchy.nodes,
+      edges: hierarchy.edges,
+    };
+  }
+
+  // Jika IndexedDB kosong, kembalikan array kosong agar onboarding tidak terbypass secara salah
   return {
-    data: cached,
-    mappedNodes: hierarchy.nodes,
-    mappedEdges: hierarchy.edges,
-    nodes: hierarchy.nodes,
-    edges: hierarchy.edges,
+    data: [],
+    clusters: [],
+    majors: [],
+    mappedNodes: [],
+    mappedEdges: [],
+    nodes: [],
+    edges: [],
   };
 }
 
+export { buildClusterHierarchyGraph };
+
 export const majorApi = {
+  fetchRecommendedClustersStream,
   fetchRecommendedMajors,
   getCachedMajors,
   mapMajorNodesToUi,
   buildClusterHierarchyGraph,
+  NODE_LAYOUT_SLOTS,
 };
 
 export default majorApi;

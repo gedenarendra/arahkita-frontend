@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { formatInterestsForBackend } from "../../utils/interestUtils";
 import { mapSubjectsToBackendPayload } from "../../utils/subjectMapping";
-import { fetchRecommendedMajors, mapMajorNodesToUi } from "../../api/majorApi";
+import {
+  fetchRecommendedClustersStream,
+  buildClusterHierarchyGraph,
+} from "../../api/majorApi";
 import recommendationRepository from "../../repositories/recommendationRepository";
 
 const DEMO_MAJOR_NODES = [
@@ -20,6 +23,8 @@ function GeneratingStep({
   const [dots, setDots] = useState("..");
   const [status, setStatus] = useState("loading"); // "loading" | "error"
   const [errorMessage, setErrorMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState("Mohon menunggu respon");
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     if (status !== "loading") return;
@@ -34,23 +39,38 @@ function GeneratingStep({
   const runRecommendationFetch = useCallback(async () => {
     setStatus("loading");
     setErrorMessage("");
+    setStatusMessage("Mohon menunggu respon");
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const startTime = Date.now();
     const minat = formatInterestsForBackend(selectedInterests);
     const nilai = mapSubjectsToBackendPayload(selectedSubjects);
 
     try {
-      const result = await fetchRecommendedMajors({ minat, nilai });
+      const result = await fetchRecommendedClustersStream({
+        minat,
+        nilai,
+        onStatus: (statusData) => {
+          if (statusData?.message) {
+            setStatusMessage(statusData.message);
+          }
+        },
+        signal: controller.signal,
+      });
 
       const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, 1800 - elapsed);
+      const remainingTime = Math.max(600, 1000 - elapsed);
 
       if (
         result.success &&
         Array.isArray(result.mappedNodes) &&
         result.mappedNodes.length > 0
       ) {
-        // Simpan profil siswa (minat & nilai) untuk keperluan endpoint recommendation-results
         recommendationRepository.saveUserProfile({ minat, nilai });
 
         setTimeout(() => {
@@ -70,8 +90,10 @@ function GeneratingStep({
         }, remainingTime);
       }
     } catch (err) {
+      if (err.name === "AbortError") return;
+
       const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, 1800 - elapsed);
+      const remainingTime = Math.max(0, 1000 - elapsed);
 
       setTimeout(() => {
         setStatus("error");
@@ -84,6 +106,11 @@ function GeneratingStep({
 
   useEffect(() => {
     runRecommendationFetch();
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [runRecommendationFetch]);
 
   const handleContinueWithDemo = () => {
@@ -91,9 +118,9 @@ function GeneratingStep({
     const nilai = mapSubjectsToBackendPayload(selectedSubjects);
     recommendationRepository.saveUserProfile({ minat, nilai });
 
-    const demoMappedNodes = mapMajorNodesToUi(DEMO_MAJOR_NODES);
+    const demoGraph = buildClusterHierarchyGraph(DEMO_MAJOR_NODES);
     if (onComplete) {
-      onComplete(demoMappedNodes);
+      onComplete(demoGraph.nodes, demoGraph.edges);
     }
   };
 
@@ -176,7 +203,7 @@ function GeneratingStep({
             Generating{dots}
           </h2>
           <p className="text-[13px] text-white/80 font-normal mt-1.5 tracking-wide">
-            Mohon menunggu respon
+            {statusMessage}
           </p>
         </div>
       ) : (

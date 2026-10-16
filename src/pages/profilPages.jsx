@@ -84,8 +84,8 @@ function ProfilPages({
       console.error("Gagal menghapus IndexedDB:", error);
     }
 
-    // Set has_onboarded ke false dan hapus data profil
-    localStorage.setItem("has_onboarded", "false");
+    // Reset status onboarding dan hapus data profil
+    localStorage.removeItem("has_onboarded");
     localStorage.removeItem("user_profile_data");
 
     if (typeof onResetOnboarding === "function") {

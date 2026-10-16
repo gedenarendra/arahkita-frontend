@@ -11,8 +11,17 @@ function App() {
   // Splash animation muncul saat pertama kali aplikasi dibuka
   const [showSplash, setShowSplash] = useState(true);
 
-  // Inisialisasi onboarding: jika user sudah pernah onboarding / memiliki data, lewati onboarding
+  // Inisialisasi onboarding: periksa URL query (?reset=true / ?onboarding=true) atau localStorage
   const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window !== "undefined") {
+      const isUrlReset =
+        window.location.search.includes("reset") ||
+        window.location.search.includes("onboarding");
+      if (isUrlReset) {
+        localStorage.removeItem("has_onboarded");
+        return true;
+      }
+    }
     return localStorage.getItem("has_onboarded") !== "true";
   });
 
@@ -29,11 +38,19 @@ function App() {
     getCachedMajors().then((result) => {
       if (!isMounted) return;
 
-      if (result?.nodes && result.nodes.length > 0) {
+      const isUrlReset =
+        typeof window !== "undefined" &&
+        (window.location.search.includes("reset") ||
+          window.location.search.includes("onboarding"));
+
+      if (!isUrlReset && result?.nodes && result.nodes.length > 0) {
         setMajorNodes(result.nodes);
         setMajorEdges(result.edges || []);
         setShowOnboarding(false);
         localStorage.setItem("has_onboarded", "true");
+      } else {
+        setShowOnboarding(true);
+        localStorage.removeItem("has_onboarded");
       }
     });
 

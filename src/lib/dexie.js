@@ -27,4 +27,13 @@ db.version(3).stores({
   minicases: 'id, parent_id, minicase_number, node_type, is_done',
 });
 
+db.version(4).stores({
+  clusters: 'id, cluster_name, circle_color',
+  majorNodes: 'id, cluster_id, major_name, circle_color, child_id',
+  recommendationResults: 'id, major_name, circle_color, matching_percentage, is_completed',
+  userProfile: 'id, minat, nilai',
+  previews: 'id, major_node_id, matching_percentage',
+  minicases: 'id, parent_id, minicase_number, node_type, is_done',
+});
+
 export default db;

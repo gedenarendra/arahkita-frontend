@@ -157,32 +157,96 @@ export function detectClusterForMajor(major = {}) {
 
 /**
  * Membangun array Node Rumpun, Node Jurusan, dan Edges penghubung
- * dari data array rekomendasi jurusan yang bersumber dari repository/IndexedDB.
+ * dari data array rekomendasi jurusan atau objek { clusters, majors } yang bersumber dari repository/IndexedDB.
  *
- * @param {Array<object>} rawMajors - Array data rekomendasi jurusan dari Dexie / BE
+ * @param {Array<object>|{ clusters: Array<object>, majors: Array<object> }} input - Data clusters dan majors dari BE / Dexie
+ * @param {Array<object>|null} [possibleMajors=null] - Array jurusan jika parameter pertama adalah array clusters
  * @returns {{ nodes: Array<object>, edges: Array<object> }}
  */
-export function buildClusterHierarchyGraph(rawMajors = []) {
-  if (!Array.isArray(rawMajors) || rawMajors.length === 0) {
+export function buildClusterHierarchyGraph(input = [], possibleMajors = null) {
+  let clusters = [];
+  let majors = [];
+
+  if (input && typeof input === "object" && !Array.isArray(input)) {
+    clusters = Array.isArray(input.clusters) ? input.clusters : [];
+    majors = Array.isArray(input.majors) ? input.majors : [];
+  } else if (Array.isArray(input)) {
+    if (Array.isArray(possibleMajors)) {
+      clusters = input;
+      majors = possibleMajors;
+    } else {
+      majors = input;
+    }
+  }
+
+  if (clusters.length === 0 && majors.length === 0) {
     return getInitialClusterGraph();
   }
 
-  // 1. Kelompokkan jurusan berdasarkan cluster/rumpun
   const clusterGroups = new Map();
 
-  rawMajors.forEach((major, index) => {
-    const cluster = detectClusterForMajor(major);
-    if (!clusterGroups.has(cluster.id)) {
-      clusterGroups.set(cluster.id, {
-        clusterInfo: cluster,
+  if (clusters.length > 0) {
+    // Bangun kelompok berdasarkan data Knowledge Cluster riil dari backend
+    clusters.forEach((cluster) => {
+      const clusterId = String(cluster.id);
+      clusterGroups.set(clusterId, {
+        clusterInfo: {
+          id: clusterId,
+          name: cluster.cluster_name || cluster.name || "Rumpun Keilmuan",
+          color: cluster.circle_color || cluster.color || "#4F46E5",
+          raw: cluster,
+        },
         majors: [],
       });
-    }
-    clusterGroups.get(cluster.id).majors.push({
-      ...major,
-      originalIndex: index,
     });
-  });
+
+    // Petakan setiap jurusan ke cluster induknya
+    const unassignedMajors = [];
+    majors.forEach((major, index) => {
+      const majorWithIndex = { ...major, originalIndex: index };
+      let assigned = false;
+
+      // Cek berdasarkan foreign key cluster_id
+      if (major.cluster_id && clusterGroups.has(String(major.cluster_id))) {
+        clusterGroups.get(String(major.cluster_id)).majors.push(majorWithIndex);
+        assigned = true;
+      } else {
+        // Cek berdasarkan major_group array pada cluster
+        for (const cluster of clusters) {
+          if (Array.isArray(cluster.major_group) && cluster.major_group.includes(major.id)) {
+            clusterGroups.get(String(cluster.id)).majors.push(majorWithIndex);
+            assigned = true;
+            break;
+          }
+        }
+      }
+
+      if (!assigned) {
+        unassignedMajors.push(majorWithIndex);
+      }
+    });
+
+    // Jika ada jurusan tanpa cluster, masukkan ke cluster pertama
+    if (unassignedMajors.length > 0 && clusters.length > 0) {
+      const firstClusterId = String(clusters[0].id);
+      clusterGroups.get(firstClusterId).majors.push(...unassignedMajors);
+    }
+  } else {
+    // Fallback legacy: deteksi keyword untuk data demo / cache lama
+    majors.forEach((major, index) => {
+      const cluster = detectClusterForMajor(major);
+      if (!clusterGroups.has(cluster.id)) {
+        clusterGroups.set(cluster.id, {
+          clusterInfo: cluster,
+          majors: [],
+        });
+      }
+      clusterGroups.get(cluster.id).majors.push({
+        ...major,
+        originalIndex: index,
+      });
+    });
+  }
 
   const nodes = [];
   const edges = [];
@@ -197,8 +261,11 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
   let nodeCounter = 0;
 
   clusterGroups.forEach((group, clusterId) => {
-    const { clusterInfo, majors } = group;
-    const majorsCount = majors.length;
+    const { clusterInfo, majors: groupMajors } = group;
+    const majorsCount = groupMajors.length;
+    if (majorsCount === 0 && clusters.length > 0) {
+      return;
+    }
 
     // Tentukan jumlah baris jurusan
     const rowsCount =
@@ -209,7 +276,9 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
     const parentX = RUMPUN_X;
     const parentY = currentY + Math.round(totalMajorsHeight / 2);
 
-    const parentNodeId = `cluster-${clusterId}`;
+    const parentNodeId = String(clusterId).startsWith("cluster-")
+      ? String(clusterId)
+      : `cluster-${clusterId}`;
 
     // A. Buat Node Rumpun Bidang (Parent Node di Kiri - Non-Clickable)
     nodes.push({
@@ -226,6 +295,7 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
         isCluster: true,
         index: nodeCounter++,
         majorsCount,
+        raw: clusterInfo.raw || null,
       },
       style: {
         width: 140,
@@ -238,7 +308,7 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
     });
 
     // B. Buat Node Jurusan Terkait di sisi KANAN
-    majors.forEach((major, mIdx) => {
+    groupMajors.forEach((major, mIdx) => {
       let childX;
       let childY;
 
