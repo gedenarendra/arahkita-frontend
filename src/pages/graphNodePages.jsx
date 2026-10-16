@@ -191,11 +191,7 @@ function GraphNodePages({
               {/* Teks Greeting */}
               <div className="ml-40 pl-4 z-10">
                 <p className="text-sm text-blue-200 font-semibold leading-tight">
-<<<<<<< HEAD
-                  Hi, Good Morning
-=======
-                  Hai, {greeting}
->>>>>>> 74372e8 (feat: make hero greeting dynamic based on local time)
+                  Hi, {greeting}
                 </p>
                 <p className="text-[19px] font-extrabold text-white tracking-tight leading-snug">
                   Welcome to Arahkita
