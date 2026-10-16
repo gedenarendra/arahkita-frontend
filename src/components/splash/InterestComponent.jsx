@@ -347,13 +347,13 @@ function InterestComponent({
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between overflow-y-auto scrollbar-thin font-sans select-none">
+    <div className="w-full h-full flex flex-col justify-between min-h-0 font-sans select-none">
       {/* ── Teks Judul & Deskripsi (Sesuai Mockup) ── */}
-      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-4 md:pt-6 ps-4 sm:ps-2 shrink-0">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
+      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-3 md:pt-4 ps-4 sm:ps-1 shrink-0">
+        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight">
           Tentukan minat mu
         </h1>
-        <p className="text-xs sm:text-sm text-white/90 font-normal leading-relaxed mt-2 max-w-sm sm:max-w-md">
+        <p className="text-xs sm:text-xs md:text-sm text-white/90 font-normal leading-relaxed mt-1 sm:mt-1.5 max-w-sm sm:max-w-md">
           Masukan nilai rata“ setiap mata pelajaran yang sesuai dengan kategori,
           agar membantu proses pencocokan jurusan
         </p>
@@ -361,8 +361,8 @@ function InterestComponent({
 
       {/* ── 1. Tampilan Gelembung Ikon & Kotak '+' (Sesuai Gambar 1) ── */}
       {subStep === 1 && (
-        <div className="mt-2 sm:mt-1 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-1 sm:py-2">
-          <div className="relative w-72 sm:w-80 h-72 sm:h-80 flex items-center justify-center scale-90 sm:scale-95 md:scale-100 origin-center">
+        <div className="mt-2 sm:mt-1 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-1">
+          <div className="relative w-72 sm:w-80 h-72 sm:h-80 flex items-center justify-center scale-80 sm:scale-85 md:scale-95 lg:scale-100 origin-center shrink my-auto">
             {/* 1. Gelembung Atas: Peta & Lokasi */}
             <button
               type="button"
@@ -473,16 +473,28 @@ function InterestComponent({
 
       {/* ── 2. Tampilan Input & Daftar Minat (Sesuai Gambar 2) ── */}
       {subStep === 2 && (
-        <div className="mt-4 sm:mt-2 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
-          {/* Indikator Jumlah Minat */}
-          <div className="text-xs text-white/90 font-semibold mb-2 bg-white/10 px-3 py-1 rounded-full">
-            {interests.length}/{maxInterests} minat terpilih
+        <div className="mt-3 sm:mt-2 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-1">
+          {/* Bar Kontrol Atas: Indikator Jumlah Minat & Tombol Kembali ke Kategori */}
+          <div className="w-full max-w-65 sm:max-w-72 md:max-w-80 flex items-center justify-between mb-1.5 px-0.5">
+            <div className="text-[11px] sm:text-xs text-white/90 font-semibold bg-white/10 px-2.5 py-0.5 rounded-full">
+              {interests.length}/{maxInterests} minat terpilih
+            </div>
+            {onSubStepChange && (
+              <button
+                type="button"
+                onClick={() => onSubStepChange(1)}
+                className="px-2 py-0.5 bg-white/20 hover:bg-white/30 active:scale-95 text-white font-bold text-[11px] sm:text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                title="Pilih dari Kategori / Gelembung"
+              >
+                <span>+ Kategori</span>
+              </button>
+            )}
           </div>
 
           {/* Kotak Putih "masukan sini" */}
           <form
             onSubmit={handleAddSubmit}
-            className={`w-full max-w-65 sm:max-w-72 md:max-w-80 h-12 sm:h-13 bg-white rounded-xl flex items-center justify-center px-4 shadow-sm ${
+            className={`w-full max-w-65 sm:max-w-72 md:max-w-80 h-10 sm:h-11 bg-white rounded-xl flex items-center justify-center px-4 shadow-sm ${
               interests.length >= maxInterests ? "opacity-75" : ""
             }`}
           >
@@ -497,26 +509,26 @@ function InterestComponent({
                   ? "Maksimal 5 minat"
                   : "masukan sini"
               }
-              className="w-full text-center font-bold text-base text-gray-900 placeholder:text-gray-950 placeholder:font-bold outline-none bg-transparent disabled:cursor-not-allowed"
+              className="w-full text-center font-bold text-sm sm:text-base text-gray-900 placeholder:text-gray-950 placeholder:font-bold outline-none bg-transparent disabled:cursor-not-allowed"
             />
           </form>
 
           {/* Pesan Kesalahan jika ada */}
           {(errorMessage || localError) && (
-            <p className="mt-2 text-amber-200 text-xs text-center font-medium px-4">
+            <p className="mt-1.5 text-amber-200 text-xs text-center font-medium px-4">
               {errorMessage || localError}
             </p>
           )}
 
           {/* Daftar Kartu Minat (Background Abu-abu dengan Teks Tengah & Tombol 'X' di Kanan) */}
-          <div className="w-full max-w-75 sm:max-w-82 md:max-w-90 space-y-2.5 mt-4 sm:mt-5 max-h-[38vh] sm:max-h-[44vh] overflow-y-auto scrollbar-thin px-1 py-1">
+          <div className="w-full max-w-75 sm:max-w-82 md:max-w-90 space-y-2 mt-3 sm:mt-3.5 max-h-[30vh] sm:max-h-[36vh] overflow-y-auto scrollbar-thin px-1 py-1">
             {interests.map((item) => (
               <div
                 key={item.instanceId}
-                className="w-full h-10.5 sm:h-11.5 bg-[#D9D9D9] rounded-xl flex items-center justify-between px-4 sm:px-5 shadow-xs relative"
+                className="w-full h-9 sm:h-10 bg-[#D9D9D9] rounded-xl flex items-center justify-between px-3.5 sm:px-4 shadow-xs relative"
               >
                 {/* Teks Minat Terpusat Sesuai Gambar 2 */}
-                <span className="flex-1 text-center font-semibold text-gray-900 text-sm sm:text-base truncate px-2">
+                <span className="flex-1 text-center font-semibold text-gray-900 text-xs sm:text-sm truncate px-2">
                   {item.name}
                 </span>
 
@@ -524,13 +536,13 @@ function InterestComponent({
                 <button
                   type="button"
                   onClick={() => handleRemoveInterest(item.instanceId)}
-                  className="text-[#0C3C6F] font-black text-lg hover:scale-125 active:scale-95 transition-transform cursor-pointer p-0.5 shrink-0"
+                  className="text-[#0C3C6F] font-black text-base hover:scale-125 active:scale-95 transition-transform cursor-pointer p-0.5 shrink-0"
                   title={`Hapus ${item.name}`}
                 >
                   <svg
                     viewBox="0 0 24 24"
                     fill="currentColor"
-                    className="w-4.5 h-4.5"
+                    className="w-4 h-4"
                   >
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                   </svg>
@@ -544,7 +556,7 @@ function InterestComponent({
             <button
               type="button"
               onClick={() => onSubStepChange(1)}
-              className="mt-4 text-xs text-white/80 hover:text-white flex items-center gap-1 font-semibold transition-colors cursor-pointer"
+              className="mt-2 text-xs text-white/80 hover:text-white flex items-center gap-1 font-semibold transition-colors cursor-pointer"
             >
               + Pilih dari Kategori / Gelembung
             </button>

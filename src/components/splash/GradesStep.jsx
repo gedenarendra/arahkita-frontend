@@ -24,7 +24,7 @@ function GradesStep({
   const activeView = view !== undefined ? view : localView;
 
   return (
-    <div className="w-full h-full flex flex-col justify-between">
+    <div className="w-full h-full flex flex-col justify-between min-h-0">
       {activeView === "grades" ? (
         <GradesComponent
           subStep={subStep}

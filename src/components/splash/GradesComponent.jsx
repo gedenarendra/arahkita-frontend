@@ -137,13 +137,13 @@ function GradesComponent({
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between overflow-y-auto scrollbar-thin font-sans select-none">
+    <div className="w-full h-full flex flex-col justify-between min-h-0 font-sans select-none">
       {/* ── Teks Judul & Deskripsi (Sesuai Mockup) ── */}
-      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-4 md:pt-6 ps-4 sm:ps-2 shrink-0">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
+      <div className="text-left w-full max-w-xl md:max-w-2xl mx-auto pt-24 sm:pt-3 md:pt-4 ps-4 sm:ps-1 shrink-0">
+        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight">
           Nilai Rata- Rata
         </h1>
-        <p className="text-xs sm:text-sm text-white/90 font-normal leading-relaxed mt-2 max-w-sm sm:max-w-md">
+        <p className="text-xs sm:text-xs md:text-sm text-white/90 font-normal leading-relaxed mt-1 sm:mt-1.5 max-w-sm sm:max-w-md">
           Masukan nilai rata“ setiap mata pelajaran yang sesuai dengan kategori,
           agar membantu proses pencocokan jurusan
         </p>
@@ -151,11 +151,11 @@ function GradesComponent({
 
       {/* ── 1. Komponen Belum Ada Mata Pelajaran (Fase Pencarian) ── */}
       {subStep === 1 && (
-        <div className="mt-8 sm:mt-4 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
+        <div className="mt-4 sm:mt-2 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-1">
           {/* Kotak Pencarian Putih */}
           <form
             onSubmit={handleSearchSubmit}
-            className="w-full max-w-61.25 sm:max-w-72 md:max-w-80 h-10 sm:h-11 bg-white rounded-lg flex items-center justify-between px-3.5 shadow-sm"
+            className="w-full max-w-61.25 sm:max-w-72 md:max-w-80 h-9 sm:h-10 bg-white rounded-lg flex items-center justify-between px-3.5 shadow-sm"
           >
             <input
               type="text"
@@ -165,31 +165,31 @@ function GradesComponent({
                 if (localError) setLocalError("");
               }}
               placeholder="Cari mata pelajaran..."
-              className="w-full bg-transparent outline-none text-gray-800 text-base font-medium placeholder:text-gray-400"
+              className="w-full bg-transparent outline-none text-gray-800 text-sm sm:text-base font-medium placeholder:text-gray-400"
             />
             <button
               type="submit"
               aria-label="Cari mata pelajaran"
               className="text-gray-900 ml-2 hover:opacity-75 cursor-pointer shrink-0"
             >
-              <SearchIcon className="w-4.5 h-4.5" />
+              <SearchIcon className="w-4 h-4" />
             </button>
           </form>
 
           {/* Pesan Kesalahan jika user klik Next / tambah melebihi limit */}
           {displayError && (
-            <p className="pt-2 text-amber-200 text-xs text-center font-medium px-4">
+            <p className="pt-1.5 text-amber-200 text-xs text-center font-medium px-4">
               {displayError}
             </p>
           )}
 
           {/* Card Hasil Pencarian (Awalnya kosong, muncul setelah input & pencarian) */}
           {subjects.length > 0 && (
-            <div className="mt-5 sm:mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-75 sm:max-w-md md:max-w-lg mx-auto">
+            <div className="mt-4 sm:mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-75 sm:max-w-md md:max-w-lg mx-auto">
               {subjects.map((subject) => (
                 <div
                   key={subject.instanceId}
-                  className="bg-[#407BFF] text-white font-bold text-xs sm:text-sm px-3.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 select-none"
+                  className="bg-[#407BFF] text-white font-bold text-xs sm:text-sm px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5 select-none"
                 >
                   <span>{subject.name}</span>
                   <button
@@ -207,7 +207,7 @@ function GradesComponent({
 
           {/* Tombol Lanjut ke Isi Nilai setelah menambahkan mata pelajaran */}
           {subjects.length > 0 && onSubStepChange && (
-            <div className="flex flex-col items-center gap-1.5 mt-5">
+            <div className="flex flex-col items-center gap-1 mt-4 sm:mt-3">
               <button
                 type="button"
                 onClick={() => {
@@ -220,7 +220,7 @@ function GradesComponent({
                   setLocalError("");
                   onSubStepChange(2);
                 }}
-                className="px-4.5 py-2 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-1.5 sm:py-2 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <span>Lanjut Isi Nilai</span>
                 <svg
@@ -250,29 +250,50 @@ function GradesComponent({
 
       {/* ── 2. Komponen Jika Sudah Ada Mata Pelajaran (Fase Pengisian Nilai) ── */}
       {subStep === 2 && (
-        <div className="mt-4 sm:mt-3 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-2">
+        <div className="mt-2 sm:mt-1 mb-auto flex flex-col items-center justify-center shrink-0 w-full py-1">
           {displayError && (
-            <p className="pb-3 text-amber-200 text-xs text-center font-medium px-4">
+            <p className="pb-1.5 text-amber-200 text-xs text-center font-medium px-4">
               {displayError}
             </p>
           )}
-          <div className="space-y-3 sm:space-y-3.5 w-full max-w-70 sm:max-w-82 md:max-w-90 max-h-[42vh] sm:max-h-[46vh] overflow-y-auto scrollbar-thin px-1 py-1">
+
+          {/* Bar Kontrol Atas: Indikator & Tombol Tambah Mata Pelajaran (Selalu terlihat & tidak tertutup di zoom 200%) */}
+          <div className="w-full max-w-70 sm:max-w-80 md:max-w-85 flex items-center justify-between mb-1.5 px-0.5">
+            <span className="text-[11px] sm:text-xs text-white/90 font-semibold">
+              Mata Pelajaran ({subjects.length}/{MAX_SUBJECTS_COUNT})
+            </span>
+            {onSubStepChange && subjects.length < MAX_SUBJECTS_COUNT && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalError("");
+                  onSubStepChange(1);
+                }}
+                className="px-2.5 py-1 bg-white/20 hover:bg-white/30 active:scale-95 text-white font-bold text-[11px] sm:text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                title="Tambah Mata Pelajaran Lainnya"
+              >
+                <span>+ Tambah</span>
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-2 sm:space-y-2.5 w-full max-w-70 sm:max-w-80 md:max-w-85 max-h-[25vh] sm:max-h-[30vh] overflow-y-auto scrollbar-thin px-1 py-0.5">
             {subjects.map((subject) => (
               <div
                 key={subject.instanceId}
                 className="flex items-center justify-between gap-2.5"
               >
                 {/* Kotak Putih 1: Badge Mata Pelajaran */}
-                <div className="w-36.25 sm:w-40 h-10 sm:h-11 bg-white rounded-lg flex items-center justify-center shadow-sm px-2.5">
+                <div className="w-34 sm:w-38 h-9 sm:h-10 bg-white rounded-lg flex items-center justify-center shadow-sm px-2.5">
                   <span
-                    className={`w-full py-1 rounded-md text-white font-bold text-xs sm:text-sm text-center shadow-xs ${subject.badgeColor}`}
+                    className={`w-full py-0.5 sm:py-1 rounded-md text-white font-bold text-xs sm:text-sm text-center shadow-xs truncate ${subject.badgeColor}`}
                   >
                     {subject.name}
                   </span>
                 </div>
 
                 {/* Kotak Putih 2: Input Angka Nilai (Hanya angka, tidak bisa minus) */}
-                <div className="w-17.5 sm:w-18.75 h-10 sm:h-11 bg-white rounded-lg flex items-center justify-center shadow-sm px-2">
+                <div className="w-16 sm:w-18 h-9 sm:h-10 bg-white rounded-lg flex items-center justify-center shadow-sm px-2">
                   <input
                     type="number"
                     min="0"
@@ -293,7 +314,7 @@ function GradesComponent({
                     onChange={(e) =>
                       handleGradeChange(subject.instanceId, e.target.value)
                     }
-                    className="w-full text-center text-gray-900 font-bold text-base outline-none bg-transparent"
+                    className="w-full text-center text-gray-900 font-bold text-sm sm:text-base outline-none bg-transparent"
                   />
                 </div>
 
@@ -301,16 +322,16 @@ function GradesComponent({
                 <button
                   type="button"
                   onClick={() => handleRemoveSubject(subject.instanceId)}
-                  className="p-1.5 text-[#E93223] hover:opacity-75 active:scale-90 transition-all cursor-pointer shrink-0"
+                  className="p-1 text-[#E93223] hover:opacity-75 active:scale-90 transition-all cursor-pointer shrink-0"
                   title="Hapus"
                 >
-                  <TrashIcon className="w-5 h-5" />
+                  <TrashIcon className="w-4.5 h-4.5" />
                 </button>
               </div>
             ))}
           </div>
 
-          {/* Opsi Tambah Mata Pelajaran Lainnya (Kembali ke fase pencarian) */}
+          {/* Opsi Tambah Mata Pelajaran Lainnya di Bawah */}
           {onSubStepChange && (
             <button
               type="button"
@@ -318,7 +339,7 @@ function GradesComponent({
                 setLocalError("");
                 onSubStepChange(1);
               }}
-              className="mt-3.5 text-xs text-white/80 hover:text-white flex items-center gap-1 font-semibold transition-colors cursor-pointer"
+              className="mt-2 mb-1 text-xs text-white/90 hover:text-white flex items-center gap-1 font-semibold transition-colors cursor-pointer"
             >
               + Tambah Mata Pelajaran
             </button>

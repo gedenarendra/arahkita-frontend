@@ -145,15 +145,15 @@ function SplashPages({ onComplete }) {
     >
       {/* ── 1. Header Putih Atas (Hanya tampil di Slide 2, 3, 4, 5 dengan Logo Arahkita) ── */}
       {currentStep > 1 && (
-        <header className="shrink-0 h-16 sm:h-18 md:h-20 w-full flex items-end justify-end bg-white z-10">
-          <div className="w-full max-w-2xl lg:max-w-3xl mx-auto flex items-center justify-end px-6 sm:px-8 pb-2 sm:pb-3">
+        <header className="shrink-0 w-full flex items-center justify-end bg-white z-10 pt-8 pb-4 sm:pt-9 sm:pb-5 md:pt-10 md:pb-6">
+          <div className="w-full max-w-2xl lg:max-w-3xl mx-auto flex items-center justify-end px-6 sm:px-8">
             <div className="flex items-center">
               <img
                 src={logoArahkita}
-                alt="Logo Arahkita"
-                className="h-7 sm:h-8 w-auto object-contain"
+                alt="Arahkita"
+                className="h-7 w-auto object-contain"
               />
-              <span className="text-[22px] sm:text-[24px] font-bold text-gray-950 tracking-tight">
+              <span className="text-[22px] font-bold text-gray-950 tracking-tight">
                 rahkita
               </span>
             </div>
@@ -174,7 +174,7 @@ function SplashPages({ onComplete }) {
               viewBox="0 0 1000 30"
               fill="none"
               preserveAspectRatio="none"
-              className="w-full h-4 sm:h-5 md:h-6 block"
+              className="w-full h-3 sm:h-4 md:h-5 block"
             >
               <path
                 d="M 0,0 L 1000,0 L 1000,30 Q 500,0 0,30 Z"
@@ -188,9 +188,9 @@ function SplashPages({ onComplete }) {
           </div>
         )}
 
-        {/* Isi Konten Tiap Step di Dalam Area Biru (Responsif di Seluruh Ukuran Desktop) */}
-        <div className="flex-1 min-h-0 w-full bg-[#0C3C6F] flex flex-col justify-between overflow-hidden">
-          <div className="flex-1 min-h-0 w-full max-w-2xl lg:max-w-3xl mx-auto px-6 sm:px-8 flex flex-col justify-between overflow-hidden">
+        {/* Isi Konten Tiap Step di Dalam Area Biru (Scrollable jika layar pendek/zoom 200%) */}
+        <div className="flex-1 min-h-0 w-full bg-[#0C3C6F] overflow-y-auto scrollbar-thin flex flex-col">
+          <div className="flex-1 min-h-full w-full max-w-2xl lg:max-w-3xl mx-auto px-4 sm:px-8 flex flex-col justify-between py-1">
             {currentStep === 1 && <WelcomeStep />}
             {currentStep === 2 && <InterestStep />}
             {currentStep === 3 && (
@@ -233,42 +233,16 @@ function SplashPages({ onComplete }) {
               />
             )}
           </div>
-
-          {/* Indikator Titik Terpusat (4 Titik: Step 1, 2, 3, 4) */}
-          {currentStep < 5 && (
-            <div className="flex items-center justify-center gap-2.5 pb-2 sm:pb-2.5 shrink-0 z-10">
-              <span
-                className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
-                  currentStep === 1 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
-                }`}
-              />
-              <span
-                className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
-                  currentStep === 2 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
-                }`}
-              />
-              <span
-                className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
-                  currentStep === 3 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
-                }`}
-              />
-              <span
-                className={`w-2.5 h-2.5 rounded-full transition-colors duration-200 ${
-                  currentStep === 4 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
-                }`}
-              />
-            </div>
-          )}
         </div>
 
-        {/* Gelombang Asimetris Bawah (Slide 2, 3, 4) / Spacer Biru (Slide 1 agar posisi dots 100% identik) */}
+        {/* Gelombang Asimetris Bawah (Slide 2, 3, 4) / Spacer Biru (Slide 1) & Indikator Titik Pinned di Bawah Wave */}
         {currentStep > 1 && currentStep < 5 ? (
-          <div className="w-full overflow-hidden leading-none -mt-px shrink-0 bg-white">
+          <div className="w-full overflow-hidden leading-none -mt-px shrink-0 bg-white relative">
             <svg
               viewBox="0 0 1000 100"
               fill="none"
               preserveAspectRatio="none"
-              className="w-full h-12 sm:h-14 md:h-16 block"
+              className="w-full h-8 sm:h-10 md:h-12 block"
             >
               {/* Bagian Bawah Putih Menuju Tombol */}
               <path
@@ -281,16 +255,64 @@ function SplashPages({ onComplete }) {
                 fill="#0C3C6F"
               />
             </svg>
+
+            {/* Indikator Titik Terpusat di Paling Bawah Wave */}
+            <div className="absolute inset-x-0 bottom-1 sm:bottom-1.5 flex items-center justify-center gap-2.5 z-10 pointer-events-none">
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 1 ? "bg-[#0070E0]" : "bg-gray-300"
+                }`}
+              />
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 2 ? "bg-[#0070E0]" : "bg-gray-300"
+                }`}
+              />
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 3 ? "bg-[#0070E0]" : "bg-gray-300"
+                }`}
+              />
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 4 ? "bg-[#0070E0]" : "bg-gray-300"
+                }`}
+              />
+            </div>
           </div>
         ) : currentStep === 1 ? (
-          <div className="w-full h-12 sm:h-14 md:h-16 shrink-0 bg-[#0C3C6F]" />
+          <div className="w-full h-8 sm:h-10 md:h-12 shrink-0 bg-[#0C3C6F] relative flex items-center justify-center">
+            {/* Indikator Titik Terpusat di Bagian Bawah untuk Step 1 */}
+            <div className="flex items-center justify-center gap-2.5 pb-1 sm:pb-1.5">
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 1 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
+                }`}
+              />
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 2 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
+                }`}
+              />
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 3 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
+                }`}
+              />
+              <span
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-200 ${
+                  currentStep === 4 ? "bg-[#0070E0]" : "bg-[#E2E8F0]"
+                }`}
+              />
+            </div>
+          </div>
         ) : null}
       </div>
 
       {/* ── 3. Area Tombol Navigasi Bawah (Hanya Slide 1, 2, 3, 4) ── */}
       {currentStep < 5 && (
         <div
-          className={`shrink-0 w-full z-10 pt-2 sm:pt-3 pb-6 sm:pb-8 ${
+          className={`shrink-0 w-full z-10 pt-1.5 sm:pt-2 pb-3.5 sm:pb-5 md:pb-6 ${
             currentStep === 1 ? "bg-[#0C3C6F]" : "bg-white"
           }`}
         >
@@ -302,7 +324,7 @@ function SplashPages({ onComplete }) {
             {currentStep > 1 ? (
               <button
                 onClick={handleBack}
-                className="w-22.5 sm:w-25 h-9 sm:h-9.5 bg-[#D9D9D9] hover:bg-[#C8C8C8] active:scale-95 text-gray-900 font-semibold text-sm rounded-xl shadow-sm flex items-center justify-center transition-all cursor-pointer"
+                className="w-20 sm:w-24 h-8.5 sm:h-9 bg-[#D9D9D9] hover:bg-[#C8C8C8] active:scale-95 text-gray-900 font-semibold text-xs sm:text-sm rounded-xl shadow-sm flex items-center justify-center transition-all cursor-pointer"
               >
                 Back
               </button>
@@ -310,7 +332,7 @@ function SplashPages({ onComplete }) {
 
             <button
               onClick={handleNext}
-              className="w-22.5 sm:w-25 h-9 sm:h-9.5 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/25 flex items-center justify-center transition-all cursor-pointer"
+              className="w-20 sm:w-24 h-8.5 sm:h-9 bg-[#0070E0] hover:bg-[#0060C5] active:scale-95 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/25 flex items-center justify-center transition-all cursor-pointer"
             >
               Next
             </button>
