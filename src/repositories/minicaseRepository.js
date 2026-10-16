@@ -41,6 +41,36 @@ export const minicaseRepository = {
   },
 
   /**
+   * Menyimpan satu objek minicase ke IndexedDB (digunakan saat streaming per-node).
+   *
+   * @param {object} node
+   * @returns {Promise<object|null>}
+   */
+  async saveSingleMinicase(node) {
+    if (!node?.id) return null;
+    try {
+      await db.minicases.put(node);
+      return node;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Menghapus seluruh minicase milik suatu majorId sebelum proses pembuatan batch baru.
+   *
+   * @param {string} majorId
+   */
+  async deleteMinicasesByMajorId(majorId) {
+    if (!majorId) return;
+    try {
+      await db.minicases.where('parent_id').equals(String(majorId)).delete();
+    } catch {
+      // Abaikan jika tabel kosong
+    }
+  },
+
+  /**
    * Mengambil data satu minicase berdasarkan ID.
    *
    * @param {string} id

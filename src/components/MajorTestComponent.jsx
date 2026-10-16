@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import GraphNodeComponent from "./graphNodeComponent";
 import TestPages from "../pages/testPages";
 import logoArahkita from "../assets/Logo.png";
@@ -9,7 +9,7 @@ import {
   mapMinicasesToTestNodes,
 } from "../utils/testNodeUtils";
 import {
-  generateMinicases,
+  generateMinicasesStream,
   evaluateEssayAnswer,
   generateMajorPreview,
 } from "../api/minicaseApi";
@@ -35,6 +35,12 @@ function MajorTestComponent({
   const [isLoading, setIsLoading] = useState(Boolean(majorData?.id));
   const [errorMessage, setErrorMessage] = useState("");
   const [useFallbackMock, setUseFallbackMock] = useState(!majorData?.id);
+  const [aiThinkingMessage, setAiThinkingMessage] = useState(
+    "AI sedang merancang soal studi kasus aplikatif & reflektif..."
+  );
+  const [aiProgress, setAiProgress] = useState(15);
+  const [isStreamingActive, setIsStreamingActive] = useState(false);
+  const abortControllerRef = useRef(null);
 
   // State untuk submit esai dan pembuatan preview trial
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +58,8 @@ function MajorTestComponent({
     }
 
     let isMounted = true;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     // Periksa apakah preview jurusan sudah pernah dihasilkan sebelumnya
     recommendationRepository.getPreviewByMajorId(majorData.id).then((prev) => {
@@ -60,14 +68,54 @@ function MajorTestComponent({
       }
     });
 
-    generateMinicases({
+    generateMinicasesStream({
       major_id: majorData.id,
       major_name: major,
       circle_color: majorData.circle_color,
+      onStatus: (statusData) => {
+        if (!isMounted) return;
+        if (statusData?.message) setAiThinkingMessage(statusData.message);
+        if (typeof statusData?.progress === "number") {
+          setAiProgress(statusData.progress);
+        }
+      },
+      onNode: (node) => {
+        if (!isMounted) return;
+        setMinicases((prev) => {
+          const existing = Array.isArray(prev) ? prev : [];
+          if (existing.some((n) => n.id === node.id)) return existing;
+          const next = [...existing, node];
+          return next.sort(
+            (a, b) => (a.minicase_number || 0) - (b.minicase_number || 0)
+          );
+        });
+        // Early interaction: buka graf langsung begitu node pertama tiba!
+        setIsLoading(false);
+        setIsStreamingActive(true);
+
+        // Auto-unlock level berikutnya jika level sebelumnya sudah selesai dikerjakan
+        const nodeLvl = Number(node?.minicase_number);
+        if (nodeLvl) {
+          setCompletedLevels((doneList) => {
+            if (doneList.includes(nodeLvl - 1)) {
+              setUnlockedLevel((currentUnlocked) =>
+                Math.max(currentUnlocked, nodeLvl)
+              );
+            }
+            return doneList;
+          });
+        }
+      },
+      onDone: () => {
+        if (!isMounted) return;
+        setIsStreamingActive(false);
+      },
+      signal: controller.signal,
     })
       .then((res) => {
         if (!isMounted) return;
         setIsLoading(false);
+        setIsStreamingActive(false);
 
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
           setMinicases(res.data);
@@ -83,51 +131,100 @@ function MajorTestComponent({
               ...new Set([...prev, 1, ...doneLevels]),
             ]);
             setUnlockedLevel((prev) =>
-              Math.max(prev, Math.max(...doneLevels) + 1),
+              Math.max(prev, Math.max(...doneLevels) + 1)
             );
           }
         } else {
           setErrorMessage(
-            res.error ||
-              "Gagal memuat studi kasus interaktif untuk jurusan ini.",
+            res.error || "Gagal memuat studi kasus interaktif untuk jurusan ini."
           );
         }
       })
       .catch((err) => {
-        if (!isMounted) return;
+        if (!isMounted || err.name === "AbortError") return;
         setIsLoading(false);
+        setIsStreamingActive(false);
         setErrorMessage(err?.message || "Terjadi kesalahan jaringan.");
       });
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
-  }, [majorData?.id, major, majorData?.circle_color]);
+  }, [majorData, major]);
 
   const handleRetry = () => {
     if (!majorData?.id) return;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsLoading(true);
     setErrorMessage("");
+    setAiThinkingMessage(
+      "AI sedang merancang soal studi kasus aplikatif & reflektif..."
+    );
+    setAiProgress(15);
+    setIsStreamingActive(false);
 
-    generateMinicases({
+    generateMinicasesStream({
       major_id: majorData.id,
       major_name: major,
       circle_color: majorData.circle_color,
+      onStatus: (statusData) => {
+        if (statusData?.message) setAiThinkingMessage(statusData.message);
+        if (typeof statusData?.progress === "number") {
+          setAiProgress(statusData.progress);
+        }
+      },
+      onNode: (node) => {
+        setMinicases((prev) => {
+          const existing = Array.isArray(prev) ? prev : [];
+          if (existing.some((n) => n.id === node.id)) return existing;
+          const next = [...existing, node];
+          return next.sort(
+            (a, b) => (a.minicase_number || 0) - (b.minicase_number || 0)
+          );
+        });
+        setIsLoading(false);
+        setIsStreamingActive(true);
+
+        const nodeLvl = Number(node?.minicase_number);
+        if (nodeLvl) {
+          setCompletedLevels((doneList) => {
+            if (doneList.includes(nodeLvl - 1)) {
+              setUnlockedLevel((currentUnlocked) =>
+                Math.max(currentUnlocked, nodeLvl)
+              );
+            }
+            return doneList;
+          });
+        }
+      },
+      onDone: () => {
+        setIsStreamingActive(false);
+      },
+      signal: controller.signal,
     })
       .then((res) => {
         setIsLoading(false);
+        setIsStreamingActive(false);
+
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
           setMinicases(res.data);
           setErrorMessage("");
         } else {
           setErrorMessage(
-            res.error ||
-              "Gagal memuat studi kasus interaktif untuk jurusan ini.",
+            res.error || "Gagal memuat studi kasus interaktif untuk jurusan ini."
           );
         }
       })
       .catch((err) => {
+        if (err.name === "AbortError") return;
         setIsLoading(false);
+        setIsStreamingActive(false);
         setErrorMessage(err?.message || "Terjadi kesalahan jaringan.");
       });
   };
@@ -215,6 +312,16 @@ function MajorTestComponent({
     { forceRefresh = false } = {},
   ) => {
     if (!allGeneratedNodes || allGeneratedNodes.length === 0) return;
+
+    // Jangan picu completion jika stream background masih aktif
+    if (isStreamingActive) return;
+
+    // Pastikan node terminal rantai terakhir (child_id === null atau is_parent === false) sudah ada,
+    // atau jumlah total node minimal 7 (Level 1 Rules + 6 minicases)
+    const hasTerminalNode = allGeneratedNodes.some(
+      (n) => n.data?.raw?.is_parent === false || n.data?.raw?.child_id === null
+    );
+    if (!hasTerminalNode && allGeneratedNodes.length < 7) return;
 
     const allLevels = allGeneratedNodes.map((n) => n.data.level);
     const isAllComplete =
@@ -373,7 +480,12 @@ function MajorTestComponent({
     );
   }
 
+  const hasTerminalNode = allGeneratedNodes.some(
+    (n) => n.data?.raw?.is_parent === false || n.data?.raw?.child_id === null
+  );
   const isAllLevelsCompleted =
+    !isStreamingActive &&
+    (hasTerminalNode || allGeneratedNodes.length >= 7) &&
     allGeneratedNodes.length > 0 &&
     allGeneratedNodes.every((n) => completedLevels.includes(n.data.level));
 
@@ -471,9 +583,18 @@ function MajorTestComponent({
               Menyiapkan studi kasus interaktif...
             </h2>
             <p className="text-gray-500 text-xs mt-1.5 max-w-xs leading-relaxed">
-              AI sedang merancang soal studi kasus aplikatif & reflektif untuk
-              jurusan {major}.
+              {aiThinkingMessage}
             </p>
+            {/* Progress bar ramping */}
+            <div className="w-48 h-1.5 bg-gray-100 rounded-full mt-4 overflow-hidden">
+              <div
+                className="h-full bg-[#0070E0] rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(100, Math.max(10, aiProgress))}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-gray-400 font-semibold mt-1">
+              {aiProgress}%
+            </span>
           </div>
         ) : errorMessage &&
           !useFallbackMock &&
@@ -506,7 +627,20 @@ function MajorTestComponent({
             </div>
           </div>
         ) : (
-          <GraphNodeComponent
+          <div className="w-full h-full relative">
+            {/* Floating Badge di sudut atas graf selama streaming background aktif */}
+            {isStreamingActive && (
+              <div className="absolute top-3 right-4 z-20 pointer-events-none flex items-center gap-1.5 bg-white/95 backdrop-blur-xs border border-blue-200/80 shadow-xs px-2.5 py-1 rounded-full text-[11px] font-semibold text-blue-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+                <span>
+                  AI menyiapkan level berikutnya...
+                  {Array.isArray(minicases) && minicases.length > 0
+                    ? ` (${minicases.length} level siap)`
+                    : ""}
+                </span>
+              </div>
+            )}
+            <GraphNodeComponent
             nodes={visibleNodes}
             edges={[]}
             fitView={false}
@@ -534,6 +668,7 @@ function MajorTestComponent({
               size: 3,
             }}
           />
+          </div>
         )}
       </div>
 

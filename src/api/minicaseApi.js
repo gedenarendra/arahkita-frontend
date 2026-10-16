@@ -1,6 +1,7 @@
 import apiClient from '../lib/apiClient';
 import minicaseRepository from '../repositories/minicaseRepository';
 import recommendationRepository from '../repositories/recommendationRepository';
+import config from '../config/config';
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const HEX_COLOR_REGEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -16,24 +17,43 @@ export function sanitizeCircleColor(color) {
 }
 
 /**
- * Men-generate atau mengambil minicases untuk sebuah jurusan dengan strategi cache-first.
- * 1. Periksa apakah sudah tersimpan di IndexedDB (Dexie).
- * 2. Jika ada, langsung kembalikan cache lokal (fromCache: true).
- * 3. Jika belum ada, panggil POST /api/v1/minicases/generate ke backend.
- * 4. Simpan hasil response ke IndexedDB untuk penggunaan offline selanjutnya.
+ * Memeriksa apakah rantai minicases yang tersimpan di IndexedDB sudah lengkap utuh.
+ * Rantai dianggap lengkap jika memiliki setidaknya 2 node dan terdapat node terminal (is_parent === false atau child_id === null).
+ */
+export function isMinicasesChainComplete(minicases = []) {
+  if (!Array.isArray(minicases) || minicases.length < 2) return false;
+  return minicases.some((m) => m.is_parent === false || m.child_id === null);
+}
+
+/**
+ * Men-generate rantai node minicase secara streaming real-time menggunakan Server-Sent Events (SSE).
+ * 1. Cache-first: jika minicases sudah tersimpan di IndexedDB dan rantai lengkap, langsung kembalikan cache lokal.
+ * 2. Panggil SSE stream POST /api/v1/minicases/generate-stream.
+ * 3. Kirim event callback onStatus saat menerima stage & progress.
+ * 4. Simpan setiap node ke IndexedDB secara inkremental via minicaseRepository.saveSingleMinicase dan kirim ke onNode.
+ * 5. Fallback 1: Jika SSE stream gagal/terputus, otomatis memanggil fallback sinkron POST /api/v1/minicases/generate.
+ * 6. Fallback 2: Jika jaringan offline, membaca data lokal dari IndexedDB.
  *
  * @param {object} params
  * @param {string} params.major_id - UUID v4 jurusan induk
- * @param {string} params.major_name - Nama resmi jurusan kuliah
+ * @param {string} params.major_name - Nama resmi jurusan
  * @param {string} params.circle_color - Hex color lingkaran jurusan
  * @param {object|null} [params.profile] - Profil keminatan siswa (opsional)
+ * @param {Function} [params.onStatus] - Callback saat menerima update status berpikir AI
+ * @param {Function} [params.onNode] - Callback saat satu node minicase berhasil diterima
+ * @param {Function} [params.onDone] - Callback saat stream selesai
+ * @param {AbortSignal} [params.signal] - AbortSignal untuk pembatalan request
  * @returns {Promise<{ success: boolean, data: Array, fromCache: boolean, error: string|null }>}
  */
-export async function generateMinicases({
+export async function generateMinicasesStream({
   major_id,
   major_name,
   circle_color,
   profile,
+  onStatus,
+  onNode,
+  onDone,
+  signal,
 }) {
   if (!major_id) {
     return {
@@ -44,9 +64,9 @@ export async function generateMinicases({
     };
   }
 
-  // 1. Cek cache lokal IndexedDB terlebih dahulu
+  // 1. Cek cache lokal IndexedDB terlebih dahulu (Cache-First jika rantai lengkap)
   const cached = await minicaseRepository.getMinicasesByMajorId(major_id);
-  if (cached && cached.length > 0) {
+  if (cached && isMinicasesChainComplete(cached)) {
     return {
       success: true,
       data: cached,
@@ -65,7 +85,7 @@ export async function generateMinicases({
     };
   }
 
-  // 3. Ambil data profil jika belum disediakan pemanggil
+  // 3. Ambil data profil jika belum disediakan
   const userProfile = profile || (await recommendationRepository.getUserProfile());
 
   const payload = {
@@ -75,15 +95,124 @@ export async function generateMinicases({
     profile: userProfile || null,
   };
 
-  const response = await apiClient.post('/api/v1/minicases/generate', payload);
+  const baseUrl = config.apiBaseUrl.replace(/\/+$/, '');
+  const streamUrl = `${baseUrl}/api/v1/minicases/generate-stream`;
 
-  if (response.success && Array.isArray(response.data) && response.data.length > 0) {
-    await minicaseRepository.saveMinicases(major_id, response.data);
+  const receivedNodes = [];
+  let streamSucceeded = false;
 
+  try {
+    const response = await fetch(streamUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify(payload),
+      signal,
+    });
+
+    if (response.ok && response.body) {
+      // Hapus data lama jurusan ini sebelum mulai streaming data baru
+      await minicaseRepository.deleteMinicasesByMajorId(major_id);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      const processJsonLine = (jsonStr) => {
+        let parsed;
+        try {
+          parsed = JSON.parse(jsonStr);
+          if (!parsed || !parsed.type) return;
+
+          if (parsed.type === 'status' && parsed.data) {
+            onStatus?.(parsed.data);
+          } else if (parsed.type === 'node' && parsed.data) {
+            const node = parsed.data;
+            if (!receivedNodes.some((n) => n.id === node.id)) {
+              receivedNodes.push(node);
+            }
+            // Simpan inkremental ke IndexedDB
+            minicaseRepository.saveSingleMinicase(node);
+            onNode?.(node);
+          } else if (parsed.type === 'done') {
+            streamSucceeded = true;
+            onDone?.(parsed.data);
+          } else if (parsed.type === 'error') {
+            throw new Error(parsed.data?.message || 'Gagal memproses stream minicases dari backend');
+          }
+        } catch (err) {
+          if (parsed?.type === 'error') throw err;
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (value) {
+          buffer += decoder.decode(value, { stream: !done });
+          let newlineIndex;
+          while ((newlineIndex = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newlineIndex).trim();
+            buffer = buffer.slice(newlineIndex + 1);
+
+            if (line.startsWith('data:')) {
+              processJsonLine(line.slice(5).trim());
+            }
+          }
+        }
+
+        if (done) {
+          if (buffer.trim().startsWith('data:')) {
+            processJsonLine(buffer.trim().slice(5).trim());
+          }
+          break;
+        }
+      }
+
+      if (receivedNodes.length > 0) {
+        streamSucceeded = true;
+      }
+    }
+  } catch (streamError) {
+    if (streamError.name === 'AbortError') throw streamError;
+    console.warn('Minicases SSE Stream kendala, beralih ke sync fallback:', streamError?.message);
+  }
+
+  // Jika streaming sukses dan menghasilkan node
+  if (streamSucceeded && receivedNodes.length > 0) {
+    receivedNodes.sort((a, b) => (a.minicase_number || 0) - (b.minicase_number || 0));
     return {
       success: true,
-      data: response.data,
+      data: receivedNodes,
       fromCache: false,
+      error: null,
+    };
+  }
+
+  // ── FALLBACK 1: Endpoint Sinkron POST /api/v1/minicases/generate ──
+  try {
+    const syncRes = await apiClient.post('/api/v1/minicases/generate', payload);
+    if (syncRes.success && Array.isArray(syncRes.data) && syncRes.data.length > 0) {
+      await minicaseRepository.saveMinicases(major_id, syncRes.data);
+      return {
+        success: true,
+        data: syncRes.data,
+        fromCache: false,
+        error: null,
+      };
+    }
+  } catch (syncError) {
+    console.warn('Sync minicases fallback kendala:', syncError?.message);
+  }
+
+  // ── FALLBACK 2: Membaca cache lokal jika ada ──
+  const fallbackCached = await minicaseRepository.getMinicasesByMajorId(major_id);
+  if (fallbackCached && fallbackCached.length > 0) {
+    return {
+      success: true,
+      data: fallbackCached,
+      fromCache: true,
       error: null,
     };
   }
@@ -92,8 +221,16 @@ export async function generateMinicases({
     success: false,
     data: [],
     fromCache: false,
-    error: response.error || 'Gagal men-generate studi kasus interaktif dari server',
+    error: 'Gagal men-generate studi kasus interaktif dari server',
   };
+}
+
+/**
+ * Men-generate atau mengambil minicases untuk sebuah jurusan.
+ * Mendelegasikan ke generateMinicasesStream untuk kompatibilitas.
+ */
+export async function generateMinicases(params) {
+  return generateMinicasesStream(params);
 }
 
 /**
@@ -232,7 +369,9 @@ export async function generateMajorPreview(major, { forceRefresh = false } = {})
 }
 
 export const minicaseApi = {
+  generateMinicasesStream,
   generateMinicases,
+  isMinicasesChainComplete,
   evaluateEssayAnswer,
   generateMajorPreview,
   sanitizeCircleColor,
