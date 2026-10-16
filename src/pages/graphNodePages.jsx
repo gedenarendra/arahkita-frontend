@@ -11,12 +11,24 @@ const initialGraph = getInitialClusterGraph();
 const initialNodes = initialGraph.nodes;
 const initialEdges = initialGraph.edges;
 
+const getTimeGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return "Good morning";
+  }
+  if (hour >= 12 && hour < 18) {
+    return "Good afternoon";
+  }
+  return "Good evening";
+};
+
 function GraphNodePages({
   nodes: propNodes,
   edges: propEdges,
   activeTab: controlledActiveTab,
   onTabChange,
 }) {
+  const greeting = getTimeGreeting();
   const [internalActiveTab, setInternalActiveTab] = useState("home");
   const [selectedMajor, setSelectedMajor] = useState(null);
   const [cachedGraph, setCachedGraph] = useState(null);
@@ -179,7 +191,11 @@ function GraphNodePages({
               {/* Teks Greeting */}
               <div className="ml-40 pl-4 z-10">
                 <p className="text-sm text-blue-200 font-semibold leading-tight">
+<<<<<<< HEAD
                   Hi, Good Morning
+=======
+                  Hai, {greeting}
+>>>>>>> 74372e8 (feat: make hero greeting dynamic based on local time)
                 </p>
                 <p className="text-[19px] font-extrabold text-white tracking-tight leading-snug">
                   Welcome to Arahkita
