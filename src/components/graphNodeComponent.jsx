@@ -1,16 +1,24 @@
 import { ReactFlow, Background } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import PlatformNode from "./PlatformNode";
+import AnimatedStraightEdge from "./AnimatedStraightEdge";
 
 const defaultNodeTypes = {
   default: PlatformNode,
   platform: PlatformNode,
 };
 
+const defaultEdgeTypes = {
+  default: AnimatedStraightEdge,
+  straight: AnimatedStraightEdge,
+  animatedStraight: AnimatedStraightEdge,
+};
+
 function GraphNodeComponent({
   nodes = [],
   edges = [],
   nodeTypes,
+  edgeTypes,
   onNodesChange,
   onEdgesChange,
   onConnect,
@@ -27,6 +35,11 @@ function GraphNodeComponent({
     ...nodeTypes,
   };
 
+  const mergedEdgeTypes = {
+    ...defaultEdgeTypes,
+    ...edgeTypes,
+  };
+
   return (
     <div
       className={`w-full h-full min-h-0 min-w-0 relative flex-1 ${className}`}
@@ -36,6 +49,7 @@ function GraphNodeComponent({
         nodes={nodes}
         edges={edges}
         nodeTypes={mergedNodeTypes}
+        edgeTypes={mergedEdgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

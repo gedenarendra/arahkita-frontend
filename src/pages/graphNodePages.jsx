@@ -22,7 +22,13 @@ function GraphNodePages({
   const [cachedGraph, setCachedGraph] = useState(null);
 
   useEffect(() => {
-    if (Array.isArray(propNodes) && propNodes.length > 0) {
+    // Hanya skip jika propNodes DAN propEdges KEDUANYA sudah lengkap
+    if (
+      Array.isArray(propNodes) &&
+      propNodes.length > 0 &&
+      Array.isArray(propEdges) &&
+      propEdges.length > 0
+    ) {
       return;
     }
 
@@ -39,7 +45,7 @@ function GraphNodePages({
     return () => {
       isMounted = false;
     };
-  }, [propNodes]);
+  }, [propNodes, propEdges]);
 
   const hasOnboarded =
     typeof window !== "undefined" &&
@@ -56,14 +62,13 @@ function GraphNodePages({
   }, [propNodes, cachedGraph, hasOnboarded]);
 
   const displayedEdges = useMemo(() => {
-    return Array.isArray(propEdges) && propEdges.length > 0
-      ? propEdges
-      : cachedGraph?.edges && cachedGraph.edges.length > 0
-        ? cachedGraph.edges
-        : hasOnboarded &&
-            (!cachedGraph?.nodes || cachedGraph.nodes.length === 0)
-          ? []
-          : initialEdges;
+    if (Array.isArray(propEdges) && propEdges.length > 0) {
+      return propEdges;
+    }
+    if (cachedGraph?.edges && cachedGraph.edges.length > 0) {
+      return cachedGraph.edges;
+    }
+    return hasOnboarded ? [] : initialEdges;
   }, [propEdges, cachedGraph, hasOnboarded]);
 
   const activeTab =

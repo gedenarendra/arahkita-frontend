@@ -18,8 +18,9 @@ function App() {
 
   // Active Tab Navigasi: 'home' | 'recomendation' | 'profile'
   const [activeTab, setActiveTab] = useState("home");
-  // Mapped Major Nodes yang dihasilkan dari Onboarding / API
+  // Mapped Major Nodes & Edges yang dihasilkan dari Onboarding / API
   const [majorNodes, setMajorNodes] = useState(null);
+  const [majorEdges, setMajorEdges] = useState(null);
 
   // Periksa IndexedDB saat startup untuk memastikan data jurusan dimuat langsung
   useEffect(() => {
@@ -28,8 +29,9 @@ function App() {
     getCachedMajors().then((result) => {
       if (!isMounted) return;
 
-      if (result?.mappedNodes && result.mappedNodes.length > 0) {
-        setMajorNodes(result.mappedNodes);
+      if (result?.nodes && result.nodes.length > 0) {
+        setMajorNodes(result.nodes);
+        setMajorEdges(result.edges || []);
         setShowOnboarding(false);
         localStorage.setItem("has_onboarded", "true");
       }
@@ -45,9 +47,12 @@ function App() {
       {/* Halaman Utama Aplikasi: SplashPages (Onboarding) kemudian Halaman Aktif sesuai Tab */}
       {showOnboarding ? (
         <SplashPages
-          onComplete={(nodes) => {
+          onComplete={(nodes, edges) => {
             if (nodes && Array.isArray(nodes)) {
               setMajorNodes(nodes);
+            }
+            if (edges && Array.isArray(edges)) {
+              setMajorEdges(edges);
             }
             localStorage.setItem("has_onboarded", "true");
             setShowOnboarding(false);
@@ -64,6 +69,7 @@ function App() {
           onTabChange={(tab) => setActiveTab(tab)}
           onResetOnboarding={() => {
             setMajorNodes(null);
+            setMajorEdges(null);
             setShowOnboarding(true);
             setActiveTab("home");
           }}
@@ -71,6 +77,7 @@ function App() {
       ) : (
         <GraphNodePages
           nodes={majorNodes}
+          edges={majorEdges}
           activeTab={activeTab}
           onTabChange={(tab) => setActiveTab(tab)}
         />

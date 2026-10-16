@@ -54,7 +54,12 @@ function GeneratingStep({
         recommendationRepository.saveUserProfile({ minat, nilai });
 
         setTimeout(() => {
-          if (onComplete) onComplete(result.mappedNodes);
+          if (onComplete) {
+            onComplete(
+              result.nodes || result.mappedNodes,
+              result.edges || result.mappedEdges || [],
+            );
+          }
         }, remainingTime);
       } else {
         setTimeout(() => {

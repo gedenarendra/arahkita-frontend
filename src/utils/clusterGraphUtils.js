@@ -256,6 +256,9 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
 
       const majorNodeId = String(major.id || `major-${clusterId}-${mIdx}`);
 
+      const majorIndex = nodeCounter++;
+      const majorDelay = Math.max(0, majorIndex * 140 + 80);
+
       nodes.push({
         id: majorNodeId,
         type: "platform",
@@ -265,7 +268,7 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
           label: major.major_name,
           color: major.circle_color || clusterInfo.color,
           childId: major.child_id,
-          index: nodeCounter++,
+          index: majorIndex,
           isCluster: false,
           clusterName: clusterInfo.name,
           raw: major,
@@ -280,7 +283,7 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
         },
       });
 
-      // C. Garis Relasi (Edge) lurus solid dari Kanan Rumpun ke Kiri Jurusan (sesuai referensi desain)
+      // C. Garis Relasi (Edge) lurus solid muncul barengan dengan node jurusan menggunakan animasi nodePopIn
       edges.push({
         id: `edge-${parentNodeId}-${majorNodeId}`,
         source: parentNodeId,
@@ -288,9 +291,11 @@ export function buildClusterHierarchyGraph(rawMajors = []) {
         target: majorNodeId,
         targetHandle: "target-left",
         type: "straight",
+        className: "animate-node-pop",
         style: {
           stroke: clusterInfo.color || "#0052CC",
           strokeWidth: 3,
+          animationDelay: `${majorDelay}ms`,
         },
       });
     });
