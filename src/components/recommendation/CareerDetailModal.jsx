@@ -189,69 +189,71 @@ function CareerDetailModal({ career, onClose = () => {} }) {
     >
       {/* Bottom Sheet Box */}
       <div
-        className="w-full max-w-md mx-auto bg-white rounded-t-4xl sm:rounded-t-[36px] px-6 sm:px-8 pt-3 pb-10 shadow-2xl overflow-hidden flex flex-col will-change-transform"
+        className="w-full bg-white rounded-t-4xl sm:rounded-t-[36px] px-6 sm:px-8 md:px-10 pt-3 pb-10 shadow-2xl overflow-hidden flex flex-col will-change-transform"
         style={sheetTransformStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle Bar Area (Touch Target Drag-to-Dismiss) */}
-        <div
-          className="w-full pt-2 pb-4 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          title="Tarik ke bawah untuk menutup"
-        >
-          {/* Baris Handle Kapsul */}
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full transition-colors hover:bg-gray-400" />
-        </div>
+        <div className="w-full max-w-2xl lg:max-w-3xl mx-auto flex flex-col">
+          {/* Handle Bar Area (Touch Target Drag-to-Dismiss) */}
+          <div
+            className="w-full pt-2 pb-4 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            title="Tarik ke bawah untuk menutup"
+          >
+            {/* Baris Handle Kapsul */}
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full transition-colors hover:bg-gray-400" />
+          </div>
 
-        {/* Header Profesi (Dapat di-drag juga untuk kenyamanan mobile) */}
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          className="cursor-grab active:cursor-grabbing touch-none"
-        >
-          {/* Judul Profesi */}
-          <h2 className="text-2xl sm:text-[26px] font-extrabold text-gray-950 tracking-tight mb-2">
-            {currentData.title}
-          </h2>
+          {/* Header Profesi (Dapat di-drag juga untuk kenyamanan mobile) */}
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            className="cursor-grab active:cursor-grabbing touch-none"
+          >
+            {/* Judul Profesi */}
+            <h2 className="text-2xl sm:text-[26px] font-extrabold text-gray-950 tracking-tight mb-2">
+              {currentData.title}
+            </h2>
 
-          {/* Garis Divider Abu-abu Tebal */}
-          <div className="w-full h-1 bg-gray-200 rounded-full mb-5" />
-        </div>
+            {/* Garis Divider Abu-abu Tebal */}
+            <div className="w-full h-1 bg-gray-200 rounded-full mb-5" />
+          </div>
 
-        {/* Konten Scrollable jika deskripsi panjang */}
-        <div className="overflow-y-auto max-h-[60vh] scrollbar-thin pr-1">
-          {/* Deskripsi Profesi */}
-          <p className="text-xs sm:text-[13px] text-gray-800 leading-relaxed font-normal mb-8">
-            {currentData.description}
-          </p>
+          {/* Konten Scrollable jika deskripsi panjang */}
+          <div className="overflow-y-auto max-h-[60vh] scrollbar-thin pr-1">
+            {/* Deskripsi Profesi */}
+            <p className="text-xs sm:text-[13px] text-gray-800 leading-relaxed font-normal mb-8">
+              {currentData.description}
+            </p>
 
-          {/* Section Pilihan Lingkungan Kerja */}
-          {Array.isArray(currentData.workEnvironments) &&
-            currentData.workEnvironments.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-xs sm:text-sm font-bold text-gray-950">
-                  Pilihan Lingkungan Kerja
-                </h3>
-                <ul className="text-xs sm:text-[12.5px] text-gray-800 space-y-1.5 font-normal pl-3">
-                  {currentData.workEnvironments.map((env, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="mr-2 text-gray-900">•</span>
-                      <span>
-                        <strong className="font-semibold text-gray-950">
-                          {env.label}:
-                        </strong>{" "}
-                        {env.description}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* Section Pilihan Lingkungan Kerja */}
+            {Array.isArray(currentData.workEnvironments) &&
+              currentData.workEnvironments.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-950">
+                    Pilihan Lingkungan Kerja
+                  </h3>
+                  <ul className="text-xs sm:text-[12.5px] text-gray-800 space-y-1.5 font-normal pl-3">
+                    {currentData.workEnvironments.map((env, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2 text-gray-900">•</span>
+                        <span>
+                          <strong className="font-semibold text-gray-950">
+                            {env.label}:
+                          </strong>{" "}
+                          {env.description}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+          </div>
         </div>
       </div>
     </div>
